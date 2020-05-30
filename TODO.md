@@ -10,3 +10,4 @@
 
 ### resources for later
 1. [scraping with reqwest](https://rust-lang-nursery.github.io/rust-cookbook/web/scraping.html))
+2. [cross-platform binaries](https://github.com/rustwasm/wasm-pack/blob/51e6351c28fbd40745719e6d4a7bf26dadd30c85/.travis.yml#L74-L91)
