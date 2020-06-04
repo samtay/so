@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.1"
+directories = "2.0.2"
+reqwest = { version = "0.10.6", features = ["json"] }
+tokio = { version = "0.2.21", features = ["full"] }

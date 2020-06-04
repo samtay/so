@@ -3,6 +3,7 @@
 2. Hit SO API
    - [json specs](https://rust-lang-nursery.github.io/rust-cookbook/encoding/complex.html#serialize-and-deserialize-unstructured-json)
    - [hitting api](https://rust-lang-nursery.github.io/rust-cookbook/web/clients/apis.html)
+3. Test if pre-made filter can be used for various api keys
 3. Parse markdown
 
 ### resources for later

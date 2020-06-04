@@ -14,6 +14,9 @@
 ### v0.2.1
 1. Add xdga config
 
+### v0.2.2
+1. Support multiple --site args & searches
+
 ### v0.3.0
 1. Add google scraper + helpful error messages
 
