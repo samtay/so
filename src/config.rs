@@ -1,6 +1,5 @@
 pub struct Config {
     pub api_key: String,
-    pub filter: String,
     pub limit: u16,
     pub site: String,
 }

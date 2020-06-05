@@ -7,13 +7,25 @@ use std::collections::HashMap;
 
 use crate::config::Config;
 
+/// StackExchange API v2.2 URL
 const SE_URL: &str = "http://api.stackexchange.com/2.2/";
+
+/// Filter generated to include only the fields needed to populate
+/// the structs below. Go here to make new filters:
+/// [create filter](https://api.stackexchange.com/docs/create-filter).
+const SE_FILTER: &str = ".DND5X2VHHUH8HyJzpjo)5NvdHI3w6auG";
 
 /// This structure allows intercting with parts of the StackExchange
 /// API, using the `Config` struct to determine certain API settings and options.
 pub struct StackExchange {
     client: Client,
     config: Config,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Site {
+    api_site_parameter: String,
+    site_url: String,
 }
 
 /// Represents a StackExchange answer with a custom selection of fields from
@@ -85,11 +97,11 @@ impl StackExchange {
         Ok(qs)
     }
 
-    fn get_default_opts(&self) -> HashMap<&str, &String> {
+    fn get_default_opts(&self) -> HashMap<&str, &str> {
         let mut params = HashMap::new();
-        params.insert("filter", &self.config.filter);
-        params.insert("site", &self.config.site);
-        params.insert("key", &self.config.api_key);
+        params.insert("site", self.config.site.as_str());
+        params.insert("key", self.config.api_key.as_str());
+        params.insert("filter", &SE_FILTER);
         params
     }
 }
