@@ -1,21 +1,17 @@
-use directories;
-
-pub struct Site {
-    url: String,
-    code: String,
-}
-
 pub struct Config {
-    filter: String,
-    sites: Vec<String>,
+    pub api_key: String,
+    pub filter: String,
+    pub limit: u16,
+    pub site: String,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    // TODO test malformed filter string
+    // TODO test malformed api key
+    // for both, detect situation and print helpful error message
     #[test]
-    fn test_config() {
+    fn test_merge_configs() {
         assert!(true)
     }
 }
