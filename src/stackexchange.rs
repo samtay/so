@@ -2,10 +2,13 @@ use anyhow;
 use flate2::read::GzDecoder;
 use reqwest::blocking::Client;
 use reqwest::Url;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
+use std::fs::File;
+use std::path::PathBuf;
 
-use crate::config::Config;
+use crate::config::{project_dir, Config};
 
 /// StackExchange API v2.2 URL
 const SE_URL: &str = "http://api.stackexchange.com/2.2/";
@@ -15,11 +18,20 @@ const SE_URL: &str = "http://api.stackexchange.com/2.2/";
 /// [create filter](https://api.stackexchange.com/docs/create-filter).
 const SE_FILTER: &str = ".DND5X2VHHUH8HyJzpjo)5NvdHI3w6auG";
 
-/// This structure allows intercting with parts of the StackExchange
+/// Pagesize when fetching all SE sites. Should be good for many years...
+const SE_SITES_PAGESIZE: u16 = 10000;
+
+/// This structure allows interacting with parts of the StackExchange
 /// API, using the `Config` struct to determine certain API settings and options.
 pub struct StackExchange {
     client: Client,
     config: Config,
+}
+
+/// This structure allows interacting with locally cached StackExchange metadata.
+pub struct LocalStorage {
+    sites: Option<Vec<Site>>,
+    filename: PathBuf,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -55,8 +67,8 @@ pub struct Question {
 
 /// Internal struct that represents the boilerplate response wrapper from SE API.
 #[derive(Deserialize, Debug)]
-struct ResponseWrapper {
-    items: Vec<Question>,
+struct ResponseWrapper<T> {
+    items: Vec<T>,
 }
 
 impl StackExchange {
@@ -85,7 +97,7 @@ impl StackExchange {
             ])
             .send()?;
         let gz = GzDecoder::new(resp_body);
-        let wrapper: ResponseWrapper = serde_json::from_reader(gz)?;
+        let wrapper: ResponseWrapper<Question> = serde_json::from_reader(gz)?;
         let qs = wrapper
             .items
             .into_iter()
@@ -100,9 +112,71 @@ impl StackExchange {
     fn get_default_opts(&self) -> HashMap<&str, &str> {
         let mut params = HashMap::new();
         params.insert("site", self.config.site.as_str());
-        params.insert("key", self.config.api_key.as_str());
         params.insert("filter", &SE_FILTER);
+        if let Some(key) = &self.config.api_key {
+            params.insert("key", key.as_str());
+        }
         params
+    }
+}
+
+impl LocalStorage {
+    pub fn new() -> Self {
+        let project = project_dir();
+        let dir = project.cache_dir();
+        fs::create_dir_all(&dir);
+        LocalStorage {
+            sites: None,
+            filename: dir.join("sites.json"),
+        }
+    }
+
+    // TODO this function is disgusting; how do in idiomatic rust?
+    // TODO make this async, inform user if we are downloading
+    pub fn sites(&mut self) -> &Vec<Site> {
+        if let Some(ref sites) = self.sites {
+            return sites;
+        }
+        self.fetch_local_sites();
+        if let Some(ref sites) = self.sites {
+            return sites;
+        }
+        self.fetch_remote_sites();
+        self.sites.as_ref().unwrap()
+    }
+
+    pub fn update_sites(&mut self) {
+        self.fetch_remote_sites()
+    }
+
+    fn fetch_local_sites(&mut self) {
+        if let Ok(file) = File::open(&self.filename) {
+            self.sites = serde_json::from_reader(file)
+                .expect("Local cache corrupted; try running `so --update-sites`")
+        }
+    }
+
+    // TODO decide whether or not I should give LocalStorage an api key..
+    // TODO cool loading animation?
+    fn fetch_remote_sites(&mut self) {
+        let resp_body = Client::new()
+            .get(stackechange_url("sites"))
+            .header("Accepts", "application/json")
+            .query(&[
+                ("pagesize", SE_SITES_PAGESIZE.to_string()),
+                ("page", "1".to_string()),
+            ])
+            .send()
+            .unwrap(); // TODO inspect response for errors e.g. throttle
+        let gz = GzDecoder::new(resp_body);
+        let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).unwrap(); // TODO
+        self.sites = Some(wrapper.items);
+        self.store_local_sites();
+    }
+
+    fn store_local_sites(&self) {
+        let file = File::create(&self.filename).unwrap();
+        serde_json::to_writer(file, &self.sites).unwrap();
     }
 }
 

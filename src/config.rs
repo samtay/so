@@ -1,7 +1,16 @@
 pub struct Config {
-    pub api_key: String,
+    pub api_key: Option<String>,
     pub limit: u16,
     pub site: String,
+}
+
+/// Get project directory; might panic on unexpected OS
+pub fn project_dir() -> ProjectDirs {
+    ProjectDirs::from("io", "Sam Tay", "so").expect(
+        "Couldn't find
+        a suitable project directory to store cache and configuration; this
+        application may not be supported on your operating system.",
+    )
 }
 
 #[cfg(test)]

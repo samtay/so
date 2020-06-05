@@ -3,14 +3,19 @@ mod config;
 mod stackexchange;
 
 use config::Config;
-use stackexchange::StackExchange;
+use stackexchange::{LocalStorage, StackExchange};
 
 fn main() {
-    let matches = cli::mk_app().get_matches();
+    let config = config::user_config();
+    let matches = cli::mk_app(&config).get_matches();
+
+    if matches.is_present("update-sites") {
+        LocalStorage::new().update_sites();
+    }
 
     // TODO merge config from ArgMatch
     let se = StackExchange::new(Config {
-        api_key: String::from("8o9g7WcfwnwbB*Qp4VsGsw(("),
+        api_key: Some(String::from("8o9g7WcfwnwbB*Qp4VsGsw((")),
         limit: 1,
         site: String::from("stackoverflow"),
     });
