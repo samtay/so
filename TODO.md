@@ -1,7 +1,6 @@
 # TODO
 
 ### initial release
-0. move cli to cli module
 0. Install sites when file not found
 0. Implement --update-sites command
 3. Parse markdown (`pulldown_cmark`)
