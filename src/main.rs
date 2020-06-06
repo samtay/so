@@ -17,8 +17,17 @@ fn main() {
     }
 
     if opts.list_sites {
-        for s in ls.sites() {
-            println!("{}: {}", s.api_site_parameter, s.site_url);
+        let sites = ls.sites();
+        match sites.into_iter().map(|s| s.api_site_parameter.len()).max() {
+            Some(max_w) => {
+                for s in ls.sites() {
+                    println!("{:>w$}: {}", s.api_site_parameter, s.site_url, w = max_w);
+                }
+            }
+            None => {
+                // TODO stderr
+                println!("The site list is empty. Try running `so --update-sites`.");
+            }
         }
         return;
     }

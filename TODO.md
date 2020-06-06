@@ -5,7 +5,7 @@
 0. Implement --update-sites command
 3. Parse markdown (`pulldown_cmark`)
 4. Maybe default --validate-sites off (parsing 30k file a big hit)
-5. Print to stderr in style
+5. Print to stderr in [style](https://github.com/BurntSushi/termcolor)
 
 ### resources for later
 0. [Intro to async rust](http://jamesmcm.github.io/blog/2020/05/06/a-practical-introduction-to-async-programming-in-rust/)
