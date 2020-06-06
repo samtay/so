@@ -1,7 +1,44 @@
+use directories::ProjectDirs;
+use serde::{Deserialize, Serialize};
+use serde_yaml;
+use std::fs;
+use std::fs::File;
+
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
     pub api_key: Option<String>,
     pub limit: u16,
     pub site: String,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            api_key: None,
+            limit: 20,
+            site: String::from("stackoverflow"),
+        }
+    }
+}
+
+/// Get user config (writes default if none found)
+pub fn user_config() -> Config {
+    let project = project_dir();
+    let dir = project.config_dir();
+    fs::create_dir_all(&dir).unwrap(); // TODO bubble to main
+    let filename = dir.join("config.yml");
+    match File::open(&filename) {
+        Err(_) => {
+            let file = File::create(&filename).unwrap();
+            let def = Config::default();
+            serde_yaml::to_writer(file, &def).unwrap();
+            def
+        }
+        Ok(file) => serde_yaml::from_reader(file).expect(&format!(
+            "Local config corrupted; try removing it `rm {}`",
+            filename.display()
+        )),
+    }
 }
 
 /// Get project directory; might panic on unexpected OS

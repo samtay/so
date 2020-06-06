@@ -1,16 +1,26 @@
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{App, AppSettings, Arg};
+
+use crate::config;
+use crate::config::Config;
 
 // TODO maybe consts for these keywords?
 
-// TODO pull defaults from config file
 // TODO --set-api-key KEY
 // TODO --update-sites
 // TODO --install-filter-key --force
 // TODO --sites plural
 // TODO --add-site (in addition to defaults)
-//?TODO --set-default-opt opt val # e.g. --set-default-opt sites site1;site2;site3
-pub fn mk_app<'a, 'b>() -> App<'a, 'b> {
-    App::new("so")
+pub struct Opts {
+    pub list_sites: bool,
+    pub update_sites: bool,
+    pub query: Option<String>,
+    pub config: Config,
+}
+
+pub fn get_opts() -> Opts {
+    let config = config::user_config();
+    let limit = &config.limit.to_string();
+    let matches = App::new("so")
         .setting(AppSettings::ColoredHelp)
         .version(clap::crate_version!())
         .author(clap::crate_authors!())
@@ -21,13 +31,18 @@ pub fn mk_app<'a, 'b>() -> App<'a, 'b> {
                 .help("Print available StackExchange sites"),
         )
         .arg(
+            Arg::with_name("update-sites")
+                .long("update-sites")
+                .help("Update cache of StackExchange sites"),
+        )
+        .arg(
             Arg::with_name("site")
                 .long("site")
                 .short("s")
                 .multiple(true)
                 .number_of_values(1)
                 .takes_value(true)
-                .default_value("stackoverflow")
+                .default_value(&config.site)
                 .help("StackExchange site code to search"), // TODO sites plural
         )
         .arg(
@@ -36,7 +51,7 @@ pub fn mk_app<'a, 'b>() -> App<'a, 'b> {
                 .short("l")
                 .number_of_values(1)
                 .takes_value(true)
-                .default_value("1")
+                .default_value(limit)
                 .validator(|s| s.parse::<u32>().map_err(|e| e.to_string()).map(|_| ()))
                 .help("Question limit per site query")
                 .hidden(true), // TODO unhide once more than just --lucky
@@ -51,30 +66,26 @@ pub fn mk_app<'a, 'b>() -> App<'a, 'b> {
             Arg::with_name("query")
                 .multiple(true)
                 .index(1)
-                .required(true)
-                .required_unless("list-sites"),
+                .required_unless_one(&["list-sites", "update-sites"]),
         )
-}
-
-pub fn get_query(matches: ArgMatches) -> Option<String> {
-    let q = matches
-        .values_of("query")?
-        .into_iter()
-        .collect::<Vec<_>>()
-        .join(" ");
-    Some(q)
+        .get_matches();
+    Opts {
+        list_sites: matches.is_present("list-sites"),
+        update_sites: matches.is_present("update-sites"),
+        query: matches
+            .values_of("query")
+            .map(|q| q.into_iter().collect::<Vec<_>>().join(" ")),
+        config: Config {
+            // these unwraps are safe b.c. default value
+            limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),
+            site: matches.value_of("site").unwrap().to_string(),
+            // TODO if set_api_key passed, pass it here too
+            ..config
+        },
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn test_cli() {
-        let m = mk_app().get_matches_from(vec![
-            "so", "--site", "meta", "how", "do", "I", "exit", "Vim",
-        ]);
-        assert_eq!(m.value_of("site"), Some("meta"));
-        assert_eq!(get_query(m).unwrap(), "how do I exit Vim");
-    }
+    // TODO how can I test this now that it depends on user dir?
 }

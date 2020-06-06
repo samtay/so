@@ -36,8 +36,8 @@ pub struct LocalStorage {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Site {
-    api_site_parameter: String,
-    site_url: String,
+    pub api_site_parameter: String,
+    pub site_url: String,
 }
 
 /// Represents a StackExchange answer with a custom selection of fields from
@@ -124,36 +124,38 @@ impl LocalStorage {
     pub fn new() -> Self {
         let project = project_dir();
         let dir = project.cache_dir();
-        fs::create_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap(); // TODO bubble to main
         LocalStorage {
             sites: None,
             filename: dir.join("sites.json"),
         }
     }
 
-    // TODO this function is disgusting; how do in idiomatic rust?
     // TODO make this async, inform user if we are downloading
     pub fn sites(&mut self) -> &Vec<Site> {
-        if let Some(ref sites) = self.sites {
-            return sites;
-        }
-        self.fetch_local_sites();
-        if let Some(ref sites) = self.sites {
-            return sites;
-        }
-        self.fetch_remote_sites();
-        self.sites.as_ref().unwrap()
+        self.sites
+            .as_ref()
+            .map(|_| ()) // stop if we already have sites
+            .or_else(|| self.fetch_local_sites()) // otherwise try local cache
+            .unwrap_or_else(|| self.fetch_remote_sites()); // otherwise remote fetch
+        self.sites.as_ref().unwrap() // we will have paniced earlier on failure
     }
 
     pub fn update_sites(&mut self) {
-        self.fetch_remote_sites()
+        self.fetch_remote_sites();
     }
 
-    fn fetch_local_sites(&mut self) {
-        if let Ok(file) = File::open(&self.filename) {
-            self.sites = serde_json::from_reader(file)
-                .expect("Local cache corrupted; try running `so --update-sites`")
-        }
+    pub fn validate_site(&mut self, site_code: &String) -> bool {
+        self.sites()
+            .iter()
+            .any(|site| site.api_site_parameter == *site_code)
+    }
+
+    fn fetch_local_sites(&mut self) -> Option<()> {
+        let file = File::open(&self.filename).ok()?;
+        self.sites = serde_json::from_reader(file)
+            .expect("Local cache corrupted; try running `so --update-sites`");
+        Some(())
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
@@ -169,7 +171,7 @@ impl LocalStorage {
             .send()
             .unwrap(); // TODO inspect response for errors e.g. throttle
         let gz = GzDecoder::new(resp_body);
-        let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).unwrap(); // TODO
+        let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).unwrap();
         self.sites = Some(wrapper.items);
         self.store_local_sites();
     }
