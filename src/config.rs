@@ -1,6 +1,5 @@
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
-use serde_yaml;
 use std::fs;
 use std::fs::File;
 
@@ -42,10 +41,12 @@ pub fn user_config() -> Result<Config> {
 
 /// Get project directory
 pub fn project_dir() -> Result<ProjectDirs> {
-    ProjectDirs::from("io", "Sam Tay", "so").ok_or(Error::os(
-        "Couldn't find a suitable project directory to store cache and configuration;\n\
-        this application may not be supported on your operating system.",
-    ))
+    ProjectDirs::from("io", "Sam Tay", "so").ok_or_else(|| {
+        Error::os(
+            "Couldn't find a suitable project directory to store cache and configuration;\n\
+            this application may not be supported on your operating system.",
+        )
+    })
 }
 
 #[cfg(test)]

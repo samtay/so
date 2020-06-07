@@ -147,23 +147,23 @@ impl LocalStorage {
     // TODO make this async, inform user if we are downloading
     pub fn sites(&mut self) -> Result<&Vec<Site>> {
         // Stop once Option ~ Some or Result ~ Err
-        if let Some(_) = self.sites {
+        if self.sites.is_some() {
             return Ok(self.sites.as_ref().unwrap()); // safe
         }
-        if let Some(_) = self.fetch_local_sites()? {
+        if self.fetch_local_sites()?.is_some() {
             return Ok(self.sites.as_ref().unwrap()); // safe
         }
         self.fetch_remote_sites()?;
         self.sites
             .as_ref()
-            .ok_or(Error::from("Code failure in site listing retrieval"))
+            .ok_or_else(|| Error::from("Code failure in site listing retrieval"))
     }
 
     pub fn update_sites(&mut self) -> Result<()> {
         self.fetch_remote_sites()
     }
 
-    pub fn validate_site(&mut self, site_code: &String) -> Result<bool> {
+    pub fn validate_site(&mut self, site_code: &str) -> Result<bool> {
         let sites = self.sites()?;
         if sites.is_empty() {
             return Err(Error {
@@ -177,7 +177,7 @@ impl LocalStorage {
     }
 
     fn fetch_local_sites(&mut self) -> Result<Option<()>> {
-        if let Some(file) = File::open(&self.filename).ok() {
+        if let Ok(file) = File::open(&self.filename) {
             self.sites =
                 serde_json::from_reader(file).map_err(|_| Error::malformed(&self.filename))?;
             return Ok(Some(()));

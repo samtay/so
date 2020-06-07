@@ -76,7 +76,7 @@ pub fn get_opts() -> Result<Opts> {
         update_sites: matches.is_present("update-sites"),
         query: matches
             .values_of("query")
-            .map(|q| q.into_iter().collect::<Vec<_>>().join(" ")),
+            .map(|q| q.collect::<Vec<_>>().join(" ")),
         config: Config {
             // these unwraps are safe via clap default values & validators
             limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),

@@ -1,6 +1,6 @@
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor};
 use crossterm::QueueableCommand;
-use std::io::{Stderr, Write};
+use std::io::Write;
 
 pub trait ColoredOutput {
     fn queue_general(&mut self, color: Color, prefix: &str, s: &str) -> &mut Self;
@@ -41,7 +41,10 @@ pub trait ColoredOutput {
     }
 }
 
-impl ColoredOutput for Stderr {
+impl<T> ColoredOutput for T
+where
+    T: Write,
+{
     fn queue_general(&mut self, color: Color, prefix: &str, s: &str) -> &mut Self {
         (|| -> Result<(), crossterm::ErrorKind> {
             self.queue(SetForegroundColor(color))?

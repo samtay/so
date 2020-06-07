@@ -24,7 +24,7 @@ fn main() {
 
         if opts.list_sites {
             let sites = ls.sites()?;
-            match sites.into_iter().map(|s| s.api_site_parameter.len()).max() {
+            match sites.iter().map(|s| s.api_site_parameter.len()).max() {
                 Some(max_w) => {
                     for s in sites {
                         println!("{:>w$}: {}", s.api_site_parameter, s.site_url, w = max_w);
@@ -75,19 +75,23 @@ fn main() {
             let que = se.search(&q)?;
             let ans = que
                 .first()
-                .ok_or(Error::no_results())?
+                .ok_or_else(Error::no_results)?
                 .answers
                 .first()
-                .ok_or(Error::from(
-                "StackExchange returned a question with no answers; this shouldn't be possible!",
-            ))?;
+                .ok_or_else(|| {
+                    Error::from(
+                        "StackExchange returned a question with no answers; \
+                        this shouldn't be possible!",
+                    )
+                })?;
             println!("{}", ans.body);
         }
 
         Ok(())
     })()
-    .unwrap_or_else(|e| match e {
-        Error { error, .. } => printerr!(error),
+    .unwrap_or_else(|e| {
+        let Error { error, .. } = e;
+        printerr!(error);
     })
 }
 
