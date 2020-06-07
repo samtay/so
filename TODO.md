@@ -1,8 +1,6 @@
 # TODO
 
 ### initial release
-0. Install sites when file not found
-0. Implement --update-sites command
 3. Parse markdown (`pulldown_cmark`)
 4. Maybe default --validate-sites off (parsing 30k file a big hit)
 5. Print to stderr in [style](https://github.com/BurntSushi/termcolor)
@@ -20,3 +18,5 @@
 7. App Distribution
    [cross-platform binaries via travis](https://github.com/rustwasm/wasm-pack/blob/51e6351c28fbd40745719e6d4a7bf26dadd30c85/.travis.yml#L74-L91)
    also see lobster script in this [repo](https://git.sr.ht/~wezm/lobsters).
+
+9. Great tui-rs [example app](https://github.com/SoptikHa2/desed/blob/master/src/ui/tui.rs)

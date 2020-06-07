@@ -11,3 +11,6 @@ run into throttling issues, get a key
 ```
 so --set-api-key <KEY>
 ```
+
+Recall my api key is: `8o9g7WcfwnwbB*Qp4VsGsw((`
+

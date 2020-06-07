@@ -2,6 +2,7 @@ use clap::{App, AppSettings, Arg};
 
 use crate::config;
 use crate::config::Config;
+use crate::error::Result;
 
 // TODO maybe consts for these keywords?
 
@@ -17,8 +18,8 @@ pub struct Opts {
     pub config: Config,
 }
 
-pub fn get_opts() -> Opts {
-    let config = config::user_config();
+pub fn get_opts() -> Result<Opts> {
+    let config = config::user_config()?;
     let limit = &config.limit.to_string();
     let matches = App::new("so")
         .setting(AppSettings::ColoredHelp)
@@ -69,20 +70,21 @@ pub fn get_opts() -> Opts {
                 .required_unless_one(&["list-sites", "update-sites"]),
         )
         .get_matches();
-    Opts {
+
+    Ok(Opts {
         list_sites: matches.is_present("list-sites"),
         update_sites: matches.is_present("update-sites"),
         query: matches
             .values_of("query")
             .map(|q| q.into_iter().collect::<Vec<_>>().join(" ")),
         config: Config {
-            // these unwraps are safe b.c. default value
+            // these unwraps are safe via clap default values & validators
             limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),
             site: matches.value_of("site").unwrap().to_string(),
             // TODO if set_api_key passed, pass it here too
             ..config
         },
-    }
+    })
 }
 
 #[cfg(test)]

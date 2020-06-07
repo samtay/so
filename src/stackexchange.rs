@@ -1,4 +1,3 @@
-use anyhow;
 use flate2::read::GzDecoder;
 use reqwest::blocking::Client;
 use reqwest::Url;
@@ -9,6 +8,7 @@ use std::fs::File;
 use std::path::PathBuf;
 
 use crate::config::{project_dir, Config};
+use crate::error::{Error, ErrorKind, Result};
 
 /// StackExchange API v2.2 URL
 const SE_URL: &str = "http://api.stackexchange.com/2.2/";
@@ -81,10 +81,10 @@ impl StackExchange {
     /// Only fetches questions that have at least one answer.
     /// TODO async
     /// TODO parallel requests over multiple sites
-    pub fn search(&self, q: &str) -> Result<Vec<Question>, anyhow::Error> {
+    pub fn search(&self, q: &str) -> Result<Vec<Question>> {
         let resp_body = self
             .client
-            .get(stackechange_url("search/advanced"))
+            .get(stackexchange_url("search/advanced"))
             .header("Accepts", "application/json")
             .query(&self.get_default_opts())
             .query(&[
@@ -95,9 +95,22 @@ impl StackExchange {
                 ("order", "desc"),
                 ("sort", "relevance"),
             ])
-            .send()?;
+            .send()
+            .map_err(|e| {
+                // TODO explore legit errors such as not connected to internet
+                Error::se(format!(
+                    "Error encountered while querying StackExchange: {}",
+                    e
+                ))
+            })?;
+
         let gz = GzDecoder::new(resp_body);
-        let wrapper: ResponseWrapper<Question> = serde_json::from_reader(gz)?;
+        let wrapper: ResponseWrapper<Question> = serde_json::from_reader(gz).map_err(|e| {
+            Error::se(format!(
+                "Error decoding questions from the StackExchange API: {}",
+                e
+            ))
+        })?;
         let qs = wrapper
             .items
             .into_iter()
@@ -121,69 +134,93 @@ impl StackExchange {
 }
 
 impl LocalStorage {
-    pub fn new() -> Self {
-        let project = project_dir();
+    pub fn new() -> Result<Self> {
+        let project = project_dir()?;
         let dir = project.cache_dir();
-        fs::create_dir_all(&dir).unwrap(); // TODO bubble to main
-        LocalStorage {
+        fs::create_dir_all(&dir).map_err(|_| Error::create_dir(&dir.to_path_buf()))?;
+        Ok(LocalStorage {
             sites: None,
             filename: dir.join("sites.json"),
-        }
+        })
     }
 
     // TODO make this async, inform user if we are downloading
-    pub fn sites(&mut self) -> &Vec<Site> {
+    pub fn sites(&mut self) -> Result<&Vec<Site>> {
+        // Stop once Option ~ Some or Result ~ Err
+        if let Some(_) = self.sites {
+            return Ok(self.sites.as_ref().unwrap()); // safe
+        }
+        if let Some(_) = self.fetch_local_sites()? {
+            return Ok(self.sites.as_ref().unwrap()); // safe
+        }
+        self.fetch_remote_sites()?;
         self.sites
             .as_ref()
-            .map(|_| ()) // stop if we already have sites
-            .or_else(|| self.fetch_local_sites()) // otherwise try local cache
-            .unwrap_or_else(|| self.fetch_remote_sites()); // otherwise remote fetch
-        self.sites.as_ref().unwrap() // we will have paniced earlier on failure
+            .ok_or(Error::from("Code failure in site listing retrieval"))
     }
 
-    pub fn update_sites(&mut self) {
-        self.fetch_remote_sites();
+    pub fn update_sites(&mut self) -> Result<()> {
+        self.fetch_remote_sites()
     }
 
-    pub fn validate_site(&mut self, site_code: &String) -> bool {
-        self.sites()
+    pub fn validate_site(&mut self, site_code: &String) -> Result<bool> {
+        let sites = self.sites()?;
+        if sites.is_empty() {
+            return Err(Error {
+                kind: ErrorKind::EmptySites,
+                error: String::from(""),
+            });
+        }
+        Ok(sites
             .iter()
-            .any(|site| site.api_site_parameter == *site_code)
+            .any(|site| site.api_site_parameter == *site_code))
     }
 
-    fn fetch_local_sites(&mut self) -> Option<()> {
-        let file = File::open(&self.filename).ok()?;
-        self.sites = serde_json::from_reader(file)
-            .expect("Local cache corrupted; try running `so --update-sites`");
-        Some(())
+    fn fetch_local_sites(&mut self) -> Result<Option<()>> {
+        if let Some(file) = File::open(&self.filename).ok() {
+            self.sites =
+                serde_json::from_reader(file).map_err(|_| Error::malformed(&self.filename))?;
+            return Ok(Some(()));
+        }
+        Ok(None)
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
     // TODO cool loading animation?
-    fn fetch_remote_sites(&mut self) {
+    fn fetch_remote_sites(&mut self) -> Result<()> {
         let resp_body = Client::new()
-            .get(stackechange_url("sites"))
+            .get(stackexchange_url("sites"))
             .header("Accepts", "application/json")
             .query(&[
                 ("pagesize", SE_SITES_PAGESIZE.to_string()),
                 ("page", "1".to_string()),
             ])
             .send()
-            .unwrap(); // TODO inspect response for errors e.g. throttle
+            .map_err(|e| {
+                Error::se(format!(
+                    "Error requesting sites from StackExchange API: {}",
+                    e
+                ))
+            })?;
         let gz = GzDecoder::new(resp_body);
-        let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).unwrap();
+        let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).map_err(|e| {
+            Error::se(format!(
+                "Error decoding sites from the StackExchange API: {}",
+                e
+            ))
+        })?;
         self.sites = Some(wrapper.items);
-        self.store_local_sites();
+        self.store_local_sites()
     }
 
-    fn store_local_sites(&self) {
-        let file = File::create(&self.filename).unwrap();
-        serde_json::to_writer(file, &self.sites).unwrap();
+    fn store_local_sites(&self) -> Result<()> {
+        let file = File::create(&self.filename).map_err(|_| Error::create_file(&self.filename))?;
+        serde_json::to_writer(file, &self.sites).map_err(|_| Error::write_file(&self.filename))
     }
 }
 
 /// Creates url from const string; can technically panic
-fn stackechange_url(path: &str) -> Url {
+fn stackexchange_url(path: &str) -> Url {
     let mut url = Url::parse(SE_URL).unwrap();
     url.set_path(path);
     url

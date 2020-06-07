@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0"
+crossterm = "0.17"
 clap = "2.33"
 directories = "2.0"
 flate2 = "1.0"

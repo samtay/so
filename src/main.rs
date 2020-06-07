@@ -1,63 +1,94 @@
 mod cli;
 mod config;
+mod error;
+mod macros;
 mod stackexchange;
+mod term;
 
 use config::Config;
+use error::{Error, ErrorKind};
 use stackexchange::{LocalStorage, StackExchange};
+use std::io::stderr;
+use term::ColoredOutput;
 
 fn main() {
-    // TODO wrap inner function with Result<(), ErrorMessage>, propagate, print to stderr at the top level.
-    let opts = cli::get_opts();
-    let config = opts.config;
-    let site = &config.site;
-    let mut ls = LocalStorage::new();
+    (|| {
+        let opts = cli::get_opts()?;
+        let config = opts.config;
+        let site = &config.site;
+        let mut ls = LocalStorage::new()?;
 
-    if opts.update_sites {
-        ls.update_sites();
-    }
+        if opts.update_sites {
+            ls.update_sites()?;
+        }
 
-    if opts.list_sites {
-        let sites = ls.sites();
-        match sites.into_iter().map(|s| s.api_site_parameter.len()).max() {
-            Some(max_w) => {
-                for s in ls.sites() {
-                    println!("{:>w$}: {}", s.api_site_parameter, s.site_url, w = max_w);
+        if opts.list_sites {
+            let sites = ls.sites()?;
+            match sites.into_iter().map(|s| s.api_site_parameter.len()).max() {
+                Some(max_w) => {
+                    for s in sites {
+                        println!("{:>w$}: {}", s.api_site_parameter, s.site_url, w = max_w);
+                    }
+                }
+                None => {
+                    stderr()
+                        .queue_error("The site list is empty. Try running ")
+                        .queue_code_inline("so --update-sites")
+                        .unsafe_flush();
                 }
             }
-            None => {
-                // TODO stderr
-                println!("The site list is empty. Try running `so --update-sites`.");
-            }
+            return Ok(());
         }
-        return;
-    }
 
-    // TODO make this validation optional
-    if !ls.validate_site(site) {
-        // TODO tooling for printing to stderr with color, etc.
-        println!(
-            "{} is not a valid StackExchange site. If you think this
-            is in error, try running `so --update-sites` to update
-            the cached site listing.  Run `so --list-sites` for all
-            available sites.",
-            site
-        );
-        return;
-    }
+        match ls.validate_site(site) {
+            Ok(true) => (),
+            Ok(false) => {
+                stderr()
+                    .queue_error(&format!("{} is not a valid StackExchange site.\n\n", site)[..])
+                    .queue_notice("If you think this is in error, try running\n\n")
+                    .queue_code("so --update-sites\n\n")
+                    .queue_notice_inline("to update the cached site listing. You can also run ")
+                    .queue_code_inline("so --list-sites")
+                    .queue_notice_inline(" to list all available sites.")
+                    .unsafe_flush();
+                return Ok(());
+            }
+            Err(Error {
+                kind: ErrorKind::EmptySites,
+                ..
+            }) => {
+                stderr()
+                    .queue_error("The cached site list is empty. This can likely be fixed by\n\n")
+                    .queue_code("so --update-sites\n\n")
+                    .unsafe_flush();
+                return Ok(());
+            }
+            Err(e) => return Err(e),
+        }
 
-    let se = StackExchange::new(Config {
-        api_key: Some(String::from("8o9g7WcfwnwbB*Qp4VsGsw((")), // TODO stash this
-        ..config
-    });
+        let se = StackExchange::new(Config {
+            api_key: Some(String::from("8o9g7WcfwnwbB*Qp4VsGsw((")), // TODO remove when releasing
+            ..config
+        });
 
-    let query = opts.query;
-    (|| -> Option<_> {
-        let q = query?;
-        let que = se.search(&q).unwrap(); // TODO eventually be graceful
-        let ans = que.first()?.answers.first()?;
-        println!("{}", ans.body);
-        Some(())
-    })();
+        if let Some(q) = opts.query {
+            let que = se.search(&q)?;
+            let ans = que
+                .first()
+                .ok_or(Error::no_results())?
+                .answers
+                .first()
+                .ok_or(Error::from(
+                "StackExchange returned a question with no answers; this shouldn't be possible!",
+            ))?;
+            println!("{}", ans.body);
+        }
+
+        Ok(())
+    })()
+    .unwrap_or_else(|e| match e {
+        Error { error, .. } => printerr!(error),
+    })
 }
 
 #[cfg(test)]
