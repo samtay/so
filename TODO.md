@@ -4,7 +4,8 @@
 1. Touch up CLI and all that
 
 ### v0.2.0
-3. Termimad interface for viewing questions and answers
+0. Termimad interface for viewing questions and answers
+0. use [par_iter](https://github.com/rayon-rs/rayon) for parsing markdown and manual <kbd> removers, etc.
 1. Add `lucky: bool` to config, but
 2. add --lucky and --no-lucky conflicting flags to cli
 3. If --lucky, async get 1 result while getting limit results

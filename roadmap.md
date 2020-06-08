@@ -22,6 +22,8 @@
 [ ] Add duckduckgo scraper
 
 ### at some point
+[ ] ask legal@stackoverflow.com for permission to logo stackoverflow/stackexchange in readme
+[ ] add duckduckgo logo to readme
 [ ] cross-platform release binaries
 [ ] per platform package mgmt
 [ ] testing
