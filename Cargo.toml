@@ -15,3 +15,6 @@ reqwest = { version = "0.10", features = ["blocking"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.8"
+termimad = "0.8"
+minimad = "0.6"
+lazy_static = "1.4"

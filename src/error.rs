@@ -15,6 +15,7 @@ pub enum ErrorKind {
     Panic,
     EmptySites,
     NoResults,
+    Termimad(termimad::Error),
 }
 
 impl From<&str> for Error {
@@ -22,6 +23,15 @@ impl From<&str> for Error {
         Error {
             kind: ErrorKind::Panic,
             error: String::from(err),
+        }
+    }
+}
+
+impl From<termimad::Error> for Error {
+    fn from(err: termimad::Error) -> Self {
+        Error {
+            kind: ErrorKind::Termimad(err),
+            error: String::from(""),
         }
     }
 }

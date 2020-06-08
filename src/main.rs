@@ -6,10 +6,14 @@ mod stackexchange;
 mod term;
 
 use config::Config;
+use crossterm::style::Color;
 use error::{Error, ErrorKind};
+use lazy_static::lazy_static;
+use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
 use std::io::stderr;
-use term::ColoredOutput;
+use term::{prefix_err, ColoredOutput};
+use termimad::MadSkin;
 
 fn main() {
     (|| {
@@ -17,6 +21,10 @@ fn main() {
         let config = opts.config;
         let site = &config.site;
         let mut ls = LocalStorage::new()?;
+        // TODO style configuration
+        let mut skin = MadSkin::default();
+        skin.inline_code.set_fg(Color::Cyan);
+        skin.code_block.set_fg(Color::Cyan);
 
         if opts.update_sites {
             ls.update_sites()?;
@@ -27,6 +35,7 @@ fn main() {
             match sites.iter().map(|s| s.api_site_parameter.len()).max() {
                 Some(max_w) => {
                     for s in sites {
+                        // TODO print as table!
                         println!("{:>w$}: {}", s.api_site_parameter, s.site_url, w = max_w);
                     }
                 }
@@ -43,14 +52,17 @@ fn main() {
         match ls.validate_site(site) {
             Ok(true) => (),
             Ok(false) => {
-                stderr()
-                    .queue_error(&format!("{} is not a valid StackExchange site.\n\n", site)[..])
-                    .queue_notice("If you think this is in error, try running\n\n")
-                    .queue_code("so --update-sites\n\n")
-                    .queue_notice_inline("to update the cached site listing. You can also run ")
-                    .queue_code_inline("so --list-sites")
-                    .queue_notice_inline(" to list all available sites.")
-                    .unsafe_flush();
+                print_error!(skin, "$0 is not a valid StackExchange site.\n\n", site)?;
+                // TODO what about using text wrapping feature?
+                print_notice!(
+                    skin,
+                    "If you think this is incorrect, try running\n\
+                    ```\n\
+                    so --update-sites\n\
+                    ```\n\
+                    to update the cached site listing. You can also run `so --list-sites` \
+                    to list all available sites.",
+                )?;
                 return Ok(());
             }
             Err(Error {

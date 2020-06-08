@@ -1,6 +1,16 @@
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor};
 use crossterm::QueueableCommand;
+use lazy_static::lazy_static;
+use minimad::mad_inline;
 use std::io::Write;
+use termimad::{mad_write_inline, MadSkin};
+
+pub fn prefix_err() -> Result<MadSkin, termimad::Error> {
+    let mut skin = MadSkin::default();
+    skin.paragraph.set_fg(Color::Red);
+    mad_write_inline!(&mut std::io::stderr(), &skin, "✖ ")?;
+    Ok(skin)
+}
 
 pub trait ColoredOutput {
     fn queue_general(&mut self, color: Color, prefix: &str, s: &str) -> &mut Self;
