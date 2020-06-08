@@ -145,6 +145,7 @@ impl LocalStorage {
     }
 
     // TODO make this async, inform user if we are downloading
+    // TODO issue EmptySites from here when appropriate
     pub fn sites(&mut self) -> Result<&Vec<Site>> {
         // Stop once Option ~ Some or Result ~ Err
         if self.sites.is_some() {

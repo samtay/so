@@ -3,7 +3,6 @@ mod config;
 mod error;
 mod macros;
 mod stackexchange;
-mod term;
 
 use config::Config;
 use crossterm::style::Color;
@@ -11,8 +10,6 @@ use error::{Error, ErrorKind};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
-use std::io::stderr;
-use term::{prefix_err, ColoredOutput};
 use termimad::MadSkin;
 
 fn main() {
@@ -32,20 +29,15 @@ fn main() {
 
         if opts.list_sites {
             let sites = ls.sites()?;
-            match sites.iter().map(|s| s.api_site_parameter.len()).max() {
-                Some(max_w) => {
-                    for s in sites {
-                        // TODO print as table!
-                        println!("{:>w$}: {}", s.api_site_parameter, s.site_url, w = max_w);
-                    }
-                }
-                None => {
-                    stderr()
-                        .queue_error("The site list is empty. Try running ")
-                        .queue_code_inline("so --update-sites")
-                        .unsafe_flush();
-                }
+            let mut md = String::new();
+            md.push_str("|:-:|:-:|\n");
+            md.push_str("|Site Code|Site URL|\n");
+            md.push_str("|-:|:-|\n");
+            for s in sites.iter() {
+                md.push_str(&format!("|{}|{}\n", s.api_site_parameter, s.site_url));
             }
+            md.push_str("|-\n");
+            termimad::print_text(&md);
             return Ok(());
         }
 
@@ -69,10 +61,14 @@ fn main() {
                 kind: ErrorKind::EmptySites,
                 ..
             }) => {
-                stderr()
-                    .queue_error("The cached site list is empty. This can likely be fixed by\n\n")
-                    .queue_code("so --update-sites\n\n")
-                    .unsafe_flush();
+                // TODO use text wrapping feature
+                print_error!(
+                    skin,
+                    "The cached site list is empty. This can likely be fixed by\n\n\
+                    ```\n\
+                    so --update-sites\n\
+                    ```"
+                )?;
                 return Ok(());
             }
             Err(e) => return Err(e),
@@ -101,10 +97,10 @@ fn main() {
 
         Ok(())
     })()
+    .or_else(|e| print_error!(MadSkin::default(), "{}", &e.error))
     .unwrap_or_else(|e| {
-        let Error { error, .. } = e;
-        printerr!(error);
-    })
+        println!("{}", e.error);
+    });
 }
 
 #[cfg(test)]
