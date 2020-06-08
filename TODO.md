@@ -1,7 +1,7 @@
 # TODO
 
 ### v0.1.1
-1. Touch up CLI and all that
+1. Touch up CLI and all that, finish all TODOs in cli.rs
 
 ### v0.2.0
 0. Termimad interface for viewing questions and answers

@@ -2,11 +2,14 @@ use std::path::PathBuf;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
+#[derive(Debug)]
 pub struct Error {
     #[allow(dead_code)]
     pub kind: ErrorKind,
     pub error: String,
 }
+
+#[derive(Debug)]
 pub enum ErrorKind {
     Malformed,
     StackExchange,
@@ -41,7 +44,7 @@ impl Error {
     pub fn malformed(path: &PathBuf) -> Self {
         Error {
             kind: ErrorKind::Malformed,
-            error: format!("File {} is malformed; try removing it.", path.display()),
+            error: format!("File `{}` is malformed; try removing it.", path.display()),
         }
     }
     pub fn se(err: String) -> Self {
@@ -54,7 +57,7 @@ impl Error {
         Error {
             kind: ErrorKind::Permissions,
             error: format!(
-                "Couldn't create directory {}; please check the permissions
+                "Couldn't create directory `{}`; please check the permissions
                 on the parent directory",
                 path.display()
             ),
@@ -64,7 +67,7 @@ impl Error {
         Error {
             kind: ErrorKind::Permissions,
             error: format!(
-                "Couldn't create file {}; please check the directory permissions",
+                "Couldn't create file `{}`; please check the directory permissions",
                 path.display()
             ),
         }
@@ -73,7 +76,7 @@ impl Error {
         Error {
             kind: ErrorKind::Permissions,
             error: format!(
-                "Couldn't write to file {}; please check its permissions",
+                "Couldn't write to file `{}`; please check its permissions",
                 path.display()
             ),
         }

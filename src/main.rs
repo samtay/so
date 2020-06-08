@@ -1,26 +1,27 @@
 mod cli;
 mod config;
 mod error;
-mod macros;
 mod stackexchange;
+mod term;
 
 use crossterm::style::Color;
 use error::{Error, ErrorKind};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
+use term::with_error_style;
 use termimad::{CompoundStyle, MadSkin};
 
 fn main() {
+    let mut skin = MadSkin::default();
+    // TODO style configuration
+    skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
+    skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
     (|| {
         let opts = cli::get_opts()?;
         let config = opts.config;
         let site = &config.site;
         let mut ls = LocalStorage::new()?;
-        // TODO style configuration
-        let mut skin = MadSkin::default();
-        skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
-        skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
 
         if opts.update_sites {
             ls.update_sites()?;
@@ -94,9 +95,13 @@ fn main() {
 
         Ok(())
     })()
-    .or_else(|e| print_error!(MadSkin::default(), "{}", &e.error))
+    .or_else(|e| {
+        with_error_style(&mut skin, |err_skin, stderr| {
+            err_skin.write_text_on(stderr, &e.error)
+        })
+    })
     .unwrap_or_else(|e| {
-        println!("{}", e.error);
+        println!("panic! {}", e.error);
     });
 }
 

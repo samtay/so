@@ -25,6 +25,7 @@
 [ ] Add duckduckgo scraper
 
 ### at some point
+[ ] clean up error.rs and term.rs ; only keep whats actually ergonomic
 [ ] ask legal@stackoverflow.com for permission to logo stackoverflow/stackexchange in readme
 [ ] add duckduckgo logo to readme
 [ ] cross-platform release binaries
