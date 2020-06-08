@@ -4,13 +4,12 @@ mod error;
 mod macros;
 mod stackexchange;
 
-use config::Config;
 use crossterm::style::Color;
 use error::{Error, ErrorKind};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
-use termimad::MadSkin;
+use termimad::{CompoundStyle, MadSkin};
 
 fn main() {
     (|| {
@@ -20,8 +19,8 @@ fn main() {
         let mut ls = LocalStorage::new()?;
         // TODO style configuration
         let mut skin = MadSkin::default();
-        skin.inline_code.set_fg(Color::Cyan);
-        skin.code_block.set_fg(Color::Cyan);
+        skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
+        skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
 
         if opts.update_sites {
             ls.update_sites()?;
@@ -74,12 +73,8 @@ fn main() {
             Err(e) => return Err(e),
         }
 
-        let se = StackExchange::new(Config {
-            api_key: Some(String::from("8o9g7WcfwnwbB*Qp4VsGsw((")), // TODO remove when releasing
-            ..config
-        });
-
         if let Some(q) = opts.query {
+            let se = StackExchange::new(config);
             let que = se.search(&q)?;
             let ans = que
                 .first()
@@ -92,7 +87,9 @@ fn main() {
                         this shouldn't be possible!",
                     )
                 })?;
-            println!("{}", ans.body);
+            // TODO eventually do this in the right place, e.g. abstract out md parser & do within threads
+            let md = ans.body.replace("<kbd>", "**[").replace("</kbd>", "]**");
+            skin.print_text(&md);
         }
 
         Ok(())
