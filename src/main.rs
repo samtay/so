@@ -23,6 +23,10 @@ fn main() {
         let site = &config.site;
         let mut ls = LocalStorage::new()?;
 
+        if let Some(key) = opts.set_api_key {
+            config::set_api_key(key)?;
+        }
+
         if opts.update_sites {
             ls.update_sites()?;
         }
@@ -88,7 +92,7 @@ fn main() {
                         this shouldn't be possible!",
                     )
                 })?;
-            // TODO eventually do this in the right place, e.g. abstract out md parser & do within threads
+            // TODO eventually do this in the right place, e.g. abstract out md parser, write benches, & do within threads
             let md = ans.body.replace("<kbd>", "**[").replace("</kbd>", "]**");
             skin.print_text(&md);
         }
@@ -103,13 +107,4 @@ fn main() {
     .unwrap_or_else(|e| {
         println!("panic! {}", e.error);
     });
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test_main() {
-        //TODO
-    }
 }

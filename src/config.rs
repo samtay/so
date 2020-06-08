@@ -2,6 +2,7 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
+use std::path::PathBuf;
 
 use crate::error::{Error, Result};
 
@@ -27,16 +28,25 @@ pub fn user_config() -> Result<Config> {
     let project = project_dir()?;
     let dir = project.config_dir();
     fs::create_dir_all(&dir).map_err(|_| Error::create_dir(&dir.to_path_buf()))?;
-    let filename = dir.join("config.yml");
+    let filename = config_file_name()?;
     match File::open(&filename) {
         Err(_) => {
-            let file = File::create(&filename).map_err(|_| Error::create_file(&filename))?;
             let def = Config::default();
-            serde_yaml::to_writer(file, &def).map_err(|_| Error::write_file(&filename))?;
+            write_config(&def)?;
             Ok(def)
         }
         Ok(file) => serde_yaml::from_reader(file).map_err(|_| Error::malformed(&filename)),
     }
+}
+
+fn write_config(config: &Config) -> Result<()> {
+    let filename = config_file_name()?;
+    let file = File::create(&filename).map_err(|_| Error::create_file(&filename))?;
+    serde_yaml::to_writer(file, config).map_err(|_| Error::write_file(&filename))
+}
+
+fn config_file_name() -> Result<PathBuf> {
+    Ok(project_dir()?.config_dir().join("config.yml"))
 }
 
 /// Get project directory
@@ -49,13 +59,8 @@ pub fn project_dir() -> Result<ProjectDirs> {
     })
 }
 
-#[cfg(test)]
-mod tests {
-    // TODO test malformed filter string
-    // TODO test malformed api key
-    // for both, detect situation and print helpful error message
-    #[test]
-    fn test_merge_configs() {
-        assert!(true)
-    }
+pub fn set_api_key(key: String) -> Result<()> {
+    let mut cfg = user_config()?;
+    cfg.api_key = Some(key);
+    write_config(&cfg)
 }

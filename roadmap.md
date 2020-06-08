@@ -8,7 +8,7 @@
 
 ### v0.1.1
 [x] Add xdga config
-[ ] Finishing touches on cli opts like --set-api-key, etc.
+[x] Finishing touches on cli opts like --set-api-key, etc.
 
 ### v0.2.0
 [ ] Add --no-lucky option

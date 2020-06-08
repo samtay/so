@@ -4,16 +4,12 @@ use crate::config;
 use crate::config::Config;
 use crate::error::Result;
 
-// TODO maybe consts for these keywords?
-
-// TODO --set-api-key KEY
-// TODO --update-sites
-// TODO --install-filter-key --force
 // TODO --sites plural
 // TODO --add-site (in addition to defaults)
 pub struct Opts {
     pub list_sites: bool,
     pub update_sites: bool,
+    pub set_api_key: Option<String>,
     pub query: Option<String>,
     pub config: Config,
 }
@@ -37,10 +33,17 @@ pub fn get_opts() -> Result<Opts> {
                 .help("Update cache of StackExchange sites"),
         )
         .arg(
+            Arg::with_name("set-api-key")
+                .long("set-api-key")
+                .number_of_values(1)
+                .takes_value(true)
+                .help("Set StackExchange API key"),
+        )
+        .arg(
             Arg::with_name("site")
                 .long("site")
                 .short("s")
-                .multiple(true)
+                .multiple(false) // TODO sites plural
                 .number_of_values(1)
                 .takes_value(true)
                 .default_value(&config.site)
@@ -67,27 +70,27 @@ pub fn get_opts() -> Result<Opts> {
             Arg::with_name("query")
                 .multiple(true)
                 .index(1)
-                .required_unless_one(&["list-sites", "update-sites"]),
+                .required_unless_one(&["list-sites", "update-sites", "set-api-key"]),
         )
         .get_matches();
 
     Ok(Opts {
         list_sites: matches.is_present("list-sites"),
         update_sites: matches.is_present("update-sites"),
+        set_api_key: matches.value_of("set-api-key").map(String::from),
         query: matches
             .values_of("query")
             .map(|q| q.collect::<Vec<_>>().join(" ")),
         config: Config {
             // these unwraps are safe via clap default values & validators
             limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),
-            site: matches.value_of("site").unwrap().to_string(),
-            // TODO if set_api_key passed, pass it here too
-            ..config
+            site: matches.value_of("site").unwrap().to_string(), // TODO values_of
+            api_key: matches
+                .value_of("set-api-key")
+                .map(String::from)
+                .or(config.api_key),
         },
     })
 }
 
-#[cfg(test)]
-mod tests {
-    // TODO how can I test this now that it depends on user dir?
-}
+// TODO how can I test this App given https://users.rust-lang.org/t/help-with-idiomatic-rust-and-ownership-semantics/43880
