@@ -12,6 +12,9 @@
 4. Display with [space] to see more, any other key to exit.
 
 ### v0.2.1
+1. Add colors.yml configuration
+
+### v0.2.2
 1. Site can be multiple
 2. do tokio async on SE api
 3. add warning to README about throttling on excessive requests

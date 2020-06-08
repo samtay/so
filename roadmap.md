@@ -16,6 +16,9 @@
 [ ] Termimad interface for viewing multiple results
 
 ### v0.2.1
+[ ] Add colors.yml configuration
+
+### v0.2.2
 [ ] Support multiple --site args & searches
 
 ### v0.3.0

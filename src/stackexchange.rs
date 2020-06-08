@@ -11,7 +11,8 @@ use crate::config::{project_dir, Config};
 use crate::error::{Error, ErrorKind, Result};
 
 /// StackExchange API v2.2 URL
-const SE_URL: &str = "http://api.stackexchange.com/2.2/";
+const SE_API_URL: &str = "http://api.stackexchange.com";
+const SE_API_VERSION: &str = "2.2";
 
 /// Filter generated to include only the fields needed to populate
 /// the structs below. Go here to make new filters:
@@ -220,22 +221,24 @@ impl LocalStorage {
     }
 }
 
-/// Creates url from const string; can technically panic
+/// Creates stackexchange API url given endpoint; can technically panic
 fn stackexchange_url(path: &str) -> Url {
-    let mut url = Url::parse(SE_URL).unwrap();
-    url.set_path(path);
+    let mut url = Url::parse(SE_API_URL).unwrap();
+    url.path_segments_mut()
+        .unwrap()
+        .push(SE_API_VERSION)
+        .extend(path.split('/'));
     url
 }
 
 #[cfg(test)]
 mod tests {
-    // TODO for both, detect situation and print helpful error message
+    use super::*;
     #[test]
-    fn test_invalid_api_key() {
-        assert!(true)
-    }
-    #[test]
-    fn test_invalid_filter() {
-        assert!(true)
+    fn test_stackexchange_url() {
+        assert_eq!(
+            stackexchange_url("some/endpoint").as_str(),
+            "http://api.stackexchange.com/2.2/some/endpoint"
+        )
     }
 }
