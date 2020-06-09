@@ -3,6 +3,7 @@ mod config;
 mod error;
 mod stackexchange;
 mod term;
+mod utils;
 
 use crossterm::style::Color;
 use error::Error;

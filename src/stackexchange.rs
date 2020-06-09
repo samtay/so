@@ -4,11 +4,11 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::fs::File;
 use std::path::PathBuf;
 
 use crate::config::{project_dir, Config};
-use crate::error::{Error, PermissionType, Result};
+use crate::error::{Error, Result};
+use crate::utils;
 
 /// StackExchange API v2.2 URL
 const SE_API_URL: &str = "http://api.stackexchange.com";
@@ -131,8 +131,7 @@ impl LocalStorage {
     pub fn new() -> Result<Self> {
         let project = project_dir()?;
         let dir = project.cache_dir();
-        fs::create_dir_all(&dir)
-            .map_err(|_| Error::Permissions(PermissionType::Create, dir.to_path_buf()))?;
+        fs::create_dir_all(&dir)?;
         Ok(LocalStorage {
             sites: None,
             filename: dir.join("sites.json"),
@@ -164,12 +163,14 @@ impl LocalStorage {
     }
 
     fn fetch_local_sites(&mut self) -> Result<bool> {
-        if let Ok(file) = File::open(&self.filename) {
-            self.sites = serde_json::from_reader(file)
-                .map_err(|_| Error::MalformedFile(self.filename.clone()))?;
-            return Ok(true);
+        match utils::open_file(&self.filename)? {
+            Some(file) => {
+                self.sites = serde_json::from_reader(file)
+                    .map_err(|_| Error::MalformedFile(self.filename.clone()))?;
+                Ok(true)
+            }
+            None => Ok(false),
         }
-        Ok(false)
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
@@ -195,10 +196,8 @@ impl LocalStorage {
     }
 
     fn store_local_sites(&self) -> Result<()> {
-        let file = File::create(&self.filename)
-            .map_err(|_| Error::Permissions(PermissionType::Create, self.filename.clone()))?;
-        serde_json::to_writer(file, &self.sites)
-            .map_err(|_| Error::Permissions(PermissionType::Write, self.filename.clone()))
+        let file = utils::create_file(&self.filename)?;
+        Ok(serde_json::to_writer(file, &self.sites)?)
     }
 }
 

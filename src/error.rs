@@ -10,6 +10,10 @@ pub enum Error {
     Crossterm(#[from] crossterm::ErrorKind),
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
+    #[error("SerdeJson error: {0}")]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("SerdeYaml error: {0}")]
+    SerdeYaml(#[from] serde_yaml::Error),
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
     #[error("File `{}` is malformed; try removing it", .0.display())]
@@ -28,6 +32,6 @@ pub enum Error {
 
 #[derive(Debug)]
 pub enum PermissionType {
-    Create,
+    Read,
     Write,
 }

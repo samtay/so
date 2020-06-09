@@ -1,10 +1,10 @@
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::fs::File;
 use std::path::PathBuf;
 
-use crate::error::{Error, PermissionType, Result};
+use crate::error::{Error, Result};
+use crate::utils;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
@@ -27,25 +27,22 @@ impl Default for Config {
 pub fn user_config() -> Result<Config> {
     let project = project_dir()?;
     let dir = project.config_dir();
-    fs::create_dir_all(&dir)
-        .map_err(|_| Error::Permissions(PermissionType::Create, dir.to_path_buf()))?;
+    fs::create_dir_all(&dir)?;
     let filename = config_file_name()?;
-    match File::open(&filename) {
-        Err(_) => {
+    match utils::open_file(&filename)? {
+        None => {
             let def = Config::default();
             write_config(&def)?;
             Ok(def)
         }
-        Ok(file) => serde_yaml::from_reader(file).map_err(|_| Error::MalformedFile(filename)),
+        Some(file) => serde_yaml::from_reader(file).map_err(|_| Error::MalformedFile(filename)),
     }
 }
 
 fn write_config(config: &Config) -> Result<()> {
     let filename = config_file_name()?;
-    let file = File::create(&filename)
-        .map_err(|_| Error::Permissions(PermissionType::Create, filename.clone()))?;
-    serde_yaml::to_writer(file, config)
-        .map_err(|_| Error::Permissions(PermissionType::Write, filename.clone()))
+    let file = utils::create_file(&filename)?;
+    Ok(serde_yaml::to_writer(file, config)?)
 }
 
 fn config_file_name() -> Result<PathBuf> {
