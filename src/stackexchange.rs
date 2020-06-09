@@ -8,7 +8,7 @@ use std::fs::File;
 use std::path::PathBuf;
 
 use crate::config::{project_dir, Config};
-use crate::error::{Error, ErrorKind, Result};
+use crate::error::{Error, PermissionType, Result};
 
 /// StackExchange API v2.2 URL
 const SE_API_URL: &str = "http://api.stackexchange.com";
@@ -96,18 +96,11 @@ impl StackExchange {
                 ("order", "desc"),
                 ("sort", "relevance"),
             ])
-            .send()
-            .map_err(|e| {
-                // TODO explore legit errors such as not connected to internet
-                Error::se(format!(
-                    "Error encountered while querying StackExchange: {}",
-                    e
-                ))
-            })?;
+            .send()?;
 
         let gz = GzDecoder::new(resp_body);
         let wrapper: ResponseWrapper<Question> = serde_json::from_reader(gz).map_err(|e| {
-            Error::se(format!(
+            Error::StackExchange(format!(
                 "Error decoding questions from the StackExchange API: {}",
                 e
             ))
@@ -138,7 +131,8 @@ impl LocalStorage {
     pub fn new() -> Result<Self> {
         let project = project_dir()?;
         let dir = project.cache_dir();
-        fs::create_dir_all(&dir).map_err(|_| Error::create_dir(&dir.to_path_buf()))?;
+        fs::create_dir_all(&dir)
+            .map_err(|_| Error::Permissions(PermissionType::Create, dir.to_path_buf()))?;
         Ok(LocalStorage {
             sites: None,
             filename: dir.join("sites.json"),
@@ -146,19 +140,16 @@ impl LocalStorage {
     }
 
     // TODO make this async, inform user if we are downloading
-    // TODO issue EmptySites from here when appropriate
     pub fn sites(&mut self) -> Result<&Vec<Site>> {
         // Stop once Option ~ Some or Result ~ Err
-        if self.sites.is_some() {
-            return Ok(self.sites.as_ref().unwrap()); // safe
+        if self.sites.is_none() && !self.fetch_local_sites()? {
+            self.fetch_remote_sites()?;
         }
-        if self.fetch_local_sites()?.is_some() {
-            return Ok(self.sites.as_ref().unwrap()); // safe
+        match &self.sites {
+            Some(sites) if sites.is_empty() => Err(Error::EmptySites),
+            Some(sites) => Ok(sites),
+            None => panic!("Code failure in site listing retrieval"),
         }
-        self.fetch_remote_sites()?;
-        self.sites
-            .as_ref()
-            .ok_or_else(|| Error::from("Code failure in site listing retrieval"))
     }
 
     pub fn update_sites(&mut self) -> Result<()> {
@@ -166,25 +157,19 @@ impl LocalStorage {
     }
 
     pub fn validate_site(&mut self, site_code: &str) -> Result<bool> {
-        let sites = self.sites()?;
-        if sites.is_empty() {
-            return Err(Error {
-                kind: ErrorKind::EmptySites,
-                error: String::from(""),
-            });
-        }
-        Ok(sites
+        Ok(self
+            .sites()?
             .iter()
             .any(|site| site.api_site_parameter == *site_code))
     }
 
-    fn fetch_local_sites(&mut self) -> Result<Option<()>> {
+    fn fetch_local_sites(&mut self) -> Result<bool> {
         if let Ok(file) = File::open(&self.filename) {
-            self.sites =
-                serde_json::from_reader(file).map_err(|_| Error::malformed(&self.filename))?;
-            return Ok(Some(()));
+            self.sites = serde_json::from_reader(file)
+                .map_err(|_| Error::MalformedFile(self.filename.clone()))?;
+            return Ok(true);
         }
-        Ok(None)
+        Ok(false)
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
@@ -197,16 +182,10 @@ impl LocalStorage {
                 ("pagesize", SE_SITES_PAGESIZE.to_string()),
                 ("page", "1".to_string()),
             ])
-            .send()
-            .map_err(|e| {
-                Error::se(format!(
-                    "Error requesting sites from StackExchange API: {}",
-                    e
-                ))
-            })?;
+            .send()?;
         let gz = GzDecoder::new(resp_body);
         let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).map_err(|e| {
-            Error::se(format!(
+            Error::StackExchange(format!(
                 "Error decoding sites from the StackExchange API: {}",
                 e
             ))
@@ -216,8 +195,10 @@ impl LocalStorage {
     }
 
     fn store_local_sites(&self) -> Result<()> {
-        let file = File::create(&self.filename).map_err(|_| Error::create_file(&self.filename))?;
-        serde_json::to_writer(file, &self.sites).map_err(|_| Error::write_file(&self.filename))
+        let file = File::create(&self.filename)
+            .map_err(|_| Error::Permissions(PermissionType::Create, self.filename.clone()))?;
+        serde_json::to_writer(file, &self.sites)
+            .map_err(|_| Error::Permissions(PermissionType::Write, self.filename.clone()))
     }
 }
 
