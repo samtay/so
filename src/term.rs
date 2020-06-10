@@ -9,17 +9,26 @@ pub fn with_error_style<R, F>(skin: &mut MadSkin, f: F) -> Result<R>
 where
     F: FnOnce(&MadSkin, &mut Stderr) -> Result<R, termimad::Error>,
 {
-    (|| {
-        let err = &mut std::io::stderr();
-        let p = skin.paragraph.clone();
-        skin.paragraph.set_fg(Color::Red);
-        mad_write_inline!(err, skin, "✖ ")?;
-        let r: R = f(&skin, err)?;
-        skin.paragraph = p;
-        Ok::<R, termimad::Error>(r)
-    })()
-    .map_err(Error::from)
+    let err = &mut std::io::stderr();
+    let p = skin.paragraph.clone();
+    skin.paragraph.set_fg(Color::Red);
+    mad_write_inline!(err, skin, "✖ ")?;
+    let r: R = f(&skin, err)?;
+    skin.paragraph = p;
+    Ok::<R, Error>(r)
 }
+
+/// This makes code much more convenient, but would require each style to own
+/// its own skin clone. Not sure if it is worth it.
+pub fn mk_print_error(skin: &MadSkin) -> impl FnMut(&str) -> Result<()> + 'static {
+    let mut skin = skin.clone();
+    move |text: &str| {
+        with_error_style(&mut skin, |err_skin, stderr| {
+            err_skin.write_text_on(stderr, text)
+        })
+    }
+}
+
 #[macro_export]
 macro_rules! print_error {
     ($skin: expr, $md: literal $(, $value: expr )* $(,)? ) => {{

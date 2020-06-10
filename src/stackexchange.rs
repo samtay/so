@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_mut, unused_variables)]
 use flate2::read::GzDecoder;
 use reqwest::blocking::Client;
 use reqwest::Url;
@@ -55,6 +56,7 @@ pub struct Answer {
 
 /// Represents a StackExchange question with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/question)
+// TODO let body be a generic that implements Display!
 #[derive(Deserialize, Debug)]
 pub struct Question {
     #[serde(rename = "question_id")]

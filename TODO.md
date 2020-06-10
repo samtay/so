@@ -1,5 +1,5 @@
 # TODO
-
+1. maybe <query> is optional, and leaving blank starts up TUI?
 ### v0.2.0
 0. Termimad interface for viewing questions and answers
 0. use [par_iter](https://github.com/rayon-rs/rayon) for parsing markdown and manual <kbd> removers, etc.

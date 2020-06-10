@@ -1,8 +1,10 @@
+#![allow(dead_code, unused_imports, unused_mut, unused_variables)]
 mod cli;
 mod config;
 mod error;
 mod stackexchange;
 mod term;
+mod tui;
 mod utils;
 
 use crossterm::style::Color;
@@ -10,7 +12,7 @@ use error::Error;
 use lazy_static::lazy_static;
 use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
-use term::with_error_style;
+use term::mk_print_error;
 use termimad::{CompoundStyle, MadSkin};
 
 fn main() {
@@ -18,6 +20,7 @@ fn main() {
     // TODO style configuration
     skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
     skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
+    let mut print_error = mk_print_error(&skin);
     (|| {
         let opts = cli::get_opts()?;
         let config = opts.config;
@@ -48,7 +51,7 @@ fn main() {
 
         if !ls.validate_site(site)? {
             print_error!(skin, "$0 is not a valid StackExchange site.\n\n", site)?;
-            // TODO what about using text wrapping feature?
+            // TODO should only use inline for single lines; use termimad::text stuff
             print_notice!(
                 skin,
                 "If you think this is incorrect, try running\n\
@@ -62,23 +65,44 @@ fn main() {
         }
 
         if let Some(q) = opts.query {
-            let se = StackExchange::new(config);
-            let que = se.search(&q)?;
-            let ans = que.first().ok_or(Error::NoResults)?.answers.first().expect(
-                "StackExchange returned a question with no answers; \
-                    this shouldn't be possible!",
-            );
+            //let se = StackExchange::new(config);
+            // TODO async
+            //let qs = se.search(&q)?;
+            //let ans = que.first().ok_or(Error::NoResults)?.answers.first().expect(
+            //"StackExchange returned a question with no answers; \
+            //this shouldn't be possible!",
+            //);
             // TODO eventually do this in the right place, e.g. abstract out md parser, write benches, & do within threads
-            let md = ans.body.replace("<kbd>", "**[").replace("</kbd>", "]**");
-            skin.print_text(&md);
+            // TODO do the below for --lucky with option to continue
+            //let md = ans.body.replace("<kbd>", "**[").replace("</kbd>", "]**");
+            //skin.print_text(&md);
+            use crate::stackexchange::{Answer, Question};
+            tui::run(vec![Question {
+                id: 42,
+                score: 323,
+                title: "How do I exit Vim?".to_string(),
+                body: "yo this be my problem dawg but don't say **do** `this`".to_string(),
+                answers: vec![
+                    Answer {
+                        id: 422,
+                        score: -4,
+                        body: "# bad\nthis is my bad answer".to_string(),
+                        is_accepted: false,
+                    },
+                    Answer {
+                        id: 423,
+                        score: 23,
+                        body: "this is a *good* answer tho".to_string(),
+                        is_accepted: true,
+                    },
+                ],
+            }])?;
         }
 
         Ok(())
     })()
     .or_else(|e: Error| {
-        with_error_style(&mut skin, |err_skin, stderr| {
-            err_skin.write_text_on(stderr, &e.to_string())
-        })?;
+        print_error(&e.to_string())?;
         match e {
             Error::EmptySites => {
                 print_notice!(skin, "This can likely be fixed by `so --update-sites`.")
