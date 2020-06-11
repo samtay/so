@@ -45,6 +45,7 @@ fn write_config(config: &Config) -> Result<()> {
     Ok(serde_yaml::to_writer(file, config)?)
 }
 
+// TODO consider switching to .toml to be consistent with colors.toml
 fn config_file_name() -> Result<PathBuf> {
     Ok(project_dir()?.config_dir().join("config.yml"))
 }

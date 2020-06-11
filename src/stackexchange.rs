@@ -1,4 +1,3 @@
-#![allow(dead_code, unused_imports, unused_mut, unused_variables)]
 use flate2::read::GzDecoder;
 use reqwest::blocking::Client;
 use reqwest::Url;
@@ -25,6 +24,7 @@ const SE_SITES_PAGESIZE: u16 = 10000;
 
 /// This structure allows interacting with parts of the StackExchange
 /// API, using the `Config` struct to determine certain API settings and options.
+// TODO should my se structs have &str instead of String?
 pub struct StackExchange {
     client: Client,
     config: Config,

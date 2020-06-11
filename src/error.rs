@@ -26,8 +26,8 @@ pub enum Error {
     ProjectDir,
     #[error("Empty sites file in cache")]
     EmptySites,
-    #[error("Sorry, couldn't find any answers for your query")]
-    NoResults,
+    //#[error("Sorry, couldn't find any answers for your query")]
+    //NoResults,
 }
 
 #[derive(Debug)]

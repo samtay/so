@@ -1,12 +1,25 @@
 # TODO
-1. maybe <query> is optional, and leaving blank starts up TUI?
+
+## TUI considerations
+Going with cursive because it is way more flexible than tui-rs.
+**Important note** Tables are not currently allowed in stackexchange... so the
+benefit of incorporating termimad features will not be felt. But, this is
+changing [soon](https://meta.stackexchange.com/q/348746).
+
 ### v0.2.0
-0. Termimad interface for viewing questions and answers
+0. remove cruft from playing with tui-rs
+0. Cursive interface for viewing questions and answers
+1. Focus in one of four areas
+3. arrows and vim bindings to manipulate lists and scroll, depending on focus
+2. `/` to bring up new search prompt
+1. For sure: Use custom code palette nodes in theme.toml to style markdown
+1. Layout cycling?
 0. use [par_iter](https://github.com/rayon-rs/rayon) for parsing markdown and manual <kbd> removers, etc.
 1. Add `lucky: bool` to config, but
 2. add --lucky and --no-lucky conflicting flags to cli
 3. If --lucky, async get 1 result while getting limit results
 4. Display with [space] to see more, any other key to exit.
+1. maybe <query> is optional, and leaving blank starts up TUI?
 
 ### v0.2.1
 1. Add colors.yml configuration
