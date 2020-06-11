@@ -1,8 +1,12 @@
-use cursive::views::TextView;
+use cursive::traits::Nameable;
+use cursive::views::{LinearLayout, NamedView, SelectView, TextContent, TextView};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use super::markdown;
+use crate::config;
 use crate::error::Result;
-use crate::stackexchange::Question;
+use crate::stackexchange::{Answer, Question};
 
 // -----------------------------------------
 // |question title list|answer preview list| 1/3
@@ -59,23 +63,90 @@ pub enum Mode {
 // TODO take the entire SE struct for future questions
 pub fn run(qs: Vec<Question>) -> Result<()> {
     let mut siv = cursive::default();
+    siv.load_theme_file(config::theme_file_name()?).unwrap(); // TODO dont unwrap
+
+    //app state
+    //put this in siv.set_user_data? hmm
+    //TODO maybe this isn't necessary until multithreading
+
+    let question_map: HashMap<u32, Question> = qs.clone().into_iter().map(|q| (q.id, q)).collect();
+    let question_map = Arc::new(question_map);
+    let answer_map: HashMap<u32, Answer> = qs
+        .clone()
+        .into_iter()
+        .map(|q| q.answers.into_iter().map(|a| (a.id, a)))
+        .flatten()
+        .collect();
+    let answer_map = Arc::new(answer_map);
+
+    // question view
+    let current_question = TextContent::new(""); // init would be great
+    let question_view: NamedView<TextView> =
+        TextView::new_with_content(current_question.clone()).with_name("question");
+
+    // answer view
+    let current_answer = TextContent::new(""); // init would be great
+    let answer_view: NamedView<TextView> =
+        TextView::new_with_content(current_answer.clone()).with_name("answer");
+
+    // question list view
+    //let question_map_ = question_map.clone();
+    //let current_question_ = current_question.clone();
+    let question_list_view: NamedView<SelectView<u32>> = SelectView::new()
+        .autojump() // ? probably not...
+        .with_all(qs.into_iter().map(|q| (q.title, q.id)))
+        .on_select(move |s, qid| {
+            let q = question_map.get(qid).unwrap().clone();
+            let q_body = q.body;
+            let q_ans = q.answers;
+            current_question.set_content(markdown::parse(q_body));
+            s.call_on_name("answer_list", move |v: &mut SelectView<u32>| {
+                v.clear();
+                v.add_all(q_ans.into_iter().map(|a| {
+                    // TODO dedup newlines, split newlines, join with spaces
+                    // add ellipses
+                    // set const for cutoff
+                    // add score & accepted checkmark
+                    let mut a_body = a.body.clone();
+                    a_body.truncate(50);
+                    (markdown::parse(a_body), a.id)
+                }));
+            }); // TODO select initial answer
+        }) // TODO select initial question
+        .with_name("question_list");
+
+    // answer list view
+    //let answer_map_ = answer_map.clone();
+    //let current_answer_ = current_question.clone();
+    let answer_list_view: NamedView<SelectView<u32>> = SelectView::new()
+        .autojump()
+        .on_select(move |_, aid| {
+            let a = answer_map.get(aid).unwrap().clone();
+            current_answer.set_content(markdown::parse(a.body));
+        })
+        .with_name("answer_list");
 
     //TODO eventually do this in the right place, e.g. abstract out md
     //parser, write benches, & do within threads
-    let md = markdown::parse(
-        qs[0].answers[0]
-            .body
-            .clone()
-            .replace("<kbd>", "**[")
-            .replace("</kbd>", "]**"),
+    siv.add_layer(
+        LinearLayout::horizontal()
+            .child(
+                LinearLayout::vertical()
+                    .child(question_list_view)
+                    .child(question_view),
+            )
+            .child(
+                LinearLayout::vertical()
+                    .child(answer_list_view)
+                    .child(answer_view),
+            ),
     );
-    siv.add_layer(TextView::new(md));
-
     siv.run();
     Ok(())
 }
 
-// TODO prettier and more valuable tests
+// TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!
+// maybe see if we can conditionally run when --nocapture is passed?
 #[cfg(test)]
 mod tests {
     use super::*;

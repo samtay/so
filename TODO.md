@@ -7,7 +7,6 @@ benefit of incorporating termimad features will not be felt. But, this is
 changing [soon](https://meta.stackexchange.com/q/348746).
 
 ### v0.2.0
-0. remove cruft from playing with tui-rs
 0. Cursive interface for viewing questions and answers
 1. Focus in one of four areas
 3. arrows and vim bindings to manipulate lists and scroll, depending on focus

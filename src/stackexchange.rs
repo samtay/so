@@ -44,7 +44,7 @@ pub struct Site {
 
 /// Represents a StackExchange answer with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/answer)
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Answer {
     #[serde(rename = "answer_id")]
     pub id: u32,
@@ -56,8 +56,9 @@ pub struct Answer {
 
 /// Represents a StackExchange question with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/question)
+// TODO container over answers should be generic iterator
 // TODO let body be a generic that implements Display!
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Question {
     #[serde(rename = "question_id")]
     pub id: u32,

@@ -19,7 +19,12 @@ pub fn parse<S>(input: S) -> StyledString
 where
     S: Into<String>,
 {
-    let input = input.into();
+    // TODO handle other stackexchange oddities here
+    // TODO then benchmark
+    let input = input
+        .into()
+        .replace("<kbd>", "**[")
+        .replace("</kbd>", "]**");
 
     let spans = parse_spans(&input);
 
@@ -183,6 +188,7 @@ pub fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
 // TODO update these tests (some expectations will be different now)
 // TODO and add more! bang on the code, lists, etc.
 // use this as an opportunity to see how pulldown_cmark splits things up
+// TODO: how to reverse a list in Python answer is broken; test it here!
 #[cfg(test)]
 mod tests {
     use super::*;
