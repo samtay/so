@@ -1,5 +1,9 @@
+use cursive::event::EventResult;
 use cursive::traits::Nameable;
-use cursive::views::{LinearLayout, NamedView, SelectView, TextContent, TextView};
+use cursive::view::{View, ViewWrapper};
+use cursive::views::{
+    LinearLayout, NamedView, OnEventView, ResizedView, SelectView, TextContent, TextView,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -21,6 +25,7 @@ use crate::stackexchange::{Answer, Question};
 
 // TODO Circular Focus handles layout & focus & stuff
 // TODO these might be "layers" ?
+
 pub enum Layout {
     BothColumns,
     SingleColumn,
@@ -43,6 +48,8 @@ pub enum Mode {
     Insert,
     // TODO if adding a search feature, that will be anther mode
 }
+
+// TODO make my own views for lists, md, etc, and use cursive::inner_getters!
 
 //pub struct App<'a> {
 //pub stackexchange: StackExchange,
@@ -93,16 +100,13 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     //let question_map_ = question_map.clone();
     //let current_question_ = current_question.clone();
     let question_list_view: NamedView<SelectView<u32>> = SelectView::new()
-        .autojump() // ? probably not...
         .with_all(qs.into_iter().map(|q| (q.title, q.id)))
         .on_select(move |s, qid| {
-            let q = question_map.get(qid).unwrap().clone();
-            let q_body = q.body;
-            let q_ans = q.answers;
-            current_question.set_content(markdown::parse(q_body));
+            let q = question_map.get(qid).unwrap();
+            current_question.set_content(markdown::parse(&q.body));
             s.call_on_name("answer_list", move |v: &mut SelectView<u32>| {
                 v.clear();
-                v.add_all(q_ans.into_iter().map(|a| {
+                v.add_all(q.answers.iter().map(|a| {
                     // TODO dedup newlines, split newlines, join with spaces
                     // add ellipses
                     // set const for cutoff
@@ -114,35 +118,55 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
             }); // TODO select initial answer
         }) // TODO select initial question
         .with_name("question_list");
+    let question_list_view = make_select_scrollable(question_list_view);
 
     // answer list view
     //let answer_map_ = answer_map.clone();
     //let current_answer_ = current_question.clone();
     let answer_list_view: NamedView<SelectView<u32>> = SelectView::new()
-        .autojump()
         .on_select(move |_, aid| {
-            let a = answer_map.get(aid).unwrap().clone();
-            current_answer.set_content(markdown::parse(a.body));
+            let a = answer_map.get(aid).unwrap();
+            current_answer.set_content(markdown::parse(&a.body));
         })
         .with_name("answer_list");
+    let answer_list_view = make_select_scrollable(answer_list_view);
 
     //TODO eventually do this in the right place, e.g. abstract out md
     //parser, write benches, & do within threads
     siv.add_layer(
         LinearLayout::horizontal()
-            .child(
+            .child(ResizedView::with_min_width(
+                30,
                 LinearLayout::vertical()
-                    .child(question_list_view)
-                    .child(question_view),
-            )
-            .child(
+                    .child(ResizedView::with_min_height(15, question_list_view))
+                    .child(ResizedView::with_min_height(20, question_view)),
+            ))
+            .child(ResizedView::with_min_width(
+                30,
                 LinearLayout::vertical()
-                    .child(answer_list_view)
-                    .child(answer_view),
-            ),
+                    .child(ResizedView::with_min_height(15, answer_list_view))
+                    .child(ResizedView::with_min_height(20, answer_view)),
+            )),
     );
     siv.run();
     Ok(())
+}
+
+// TODO move this out to utils
+// use LastSizeView if i want to resize things with shift <HJKL>
+// Also, it might be that we control all scrolling from the top
+fn make_select_scrollable(
+    view: NamedView<SelectView<u32>>,
+) -> OnEventView<NamedView<SelectView<u32>>> {
+    OnEventView::new(view)
+        .on_pre_event_inner('k', |s, _| {
+            s.get_mut().select_up(1);
+            Some(EventResult::Consumed(None))
+        })
+        .on_pre_event_inner('j', |s, _| {
+            s.get_mut().select_down(1);
+            Some(EventResult::Consumed(None))
+        })
 }
 
 // TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!
