@@ -223,7 +223,5 @@ Hit any key to quit this screen:
                 },
             ],
         }];
-
-        assert_eq!(run(qs).unwrap(), ());
     }
 }
