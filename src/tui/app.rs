@@ -1,9 +1,11 @@
 use cursive::event::EventResult;
 use cursive::theme::{BaseColor, Color, Effect, Style};
-use cursive::traits::Nameable;
+use cursive::traits::{Nameable, Resizable, Scrollable};
 use cursive::utils::span::SpannedString;
+use cursive::view::Margins;
 use cursive::views::{
-    LinearLayout, NamedView, OnEventView, Panel, ResizedView, SelectView, TextContent, TextView,
+    LinearLayout, NamedView, OnEventView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
+    TextContent, TextView,
 };
 use cursive::XY;
 use std::cmp;
@@ -96,13 +98,11 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     let current_question = TextContent::new(""); // init would be great
     let question_view: NamedView<TextView> =
         TextView::new_with_content(current_question.clone()).with_name("question");
-    let question_view = Panel::new(question_view);
 
     // answer view
     let current_answer = TextContent::new(""); // init would be great
     let answer_view: NamedView<TextView> =
         TextView::new_with_content(current_answer.clone()).with_name("answer");
-    let answer_view = Panel::new(answer_view);
 
     // question list view
     //let question_map_ = question_map.clone();
@@ -114,7 +114,7 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
             let q = question_map.get(qid).unwrap();
             let XY { x, y: _y } = s.screen_size();
             current_question.set_content(markdown::parse(&q.body));
-            let cb = s.call_on_name("answer_list", move |v: &mut SelectView<u32>| {
+            let cb = s.call_on_name("answer_list", |v: &mut SelectView<u32>| {
                 v.clear();
                 v.add_all(q.answers.iter().map(|a| {
                     // TODO make a damn func for this
@@ -167,21 +167,24 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
 
     //TODO eventually do this in the right place, e.g. abstract out md
     //parser, write benches, & do within threads
-    siv.add_layer(
+    let margin = 1;
+    let x = if x % 2 == 0 { x - 1 } else { x };
+    siv.add_layer(PaddedView::new(
+        Margins::lrtb(margin, margin, 0, 0),
         LinearLayout::horizontal()
             .child(ResizedView::with_fixed_width(
-                x / 2,
+                (x - 2 * margin) / 2,
                 LinearLayout::vertical()
-                    .child(ResizedView::with_fixed_height(y / 3, question_list_view))
-                    .child(ResizedView::with_fixed_height(2 * y / 3, question_view)),
+                    .child(question_list_view.scrollable().fixed_height(y / 3))
+                    .child(Panel::new(question_view.scrollable()).fixed_height(2 * y / 3)),
             ))
             .child(ResizedView::with_fixed_width(
-                x / 2,
+                (x - 2 * margin) / 2,
                 LinearLayout::vertical()
-                    .child(ResizedView::with_fixed_height(y / 3, answer_list_view))
-                    .child(ResizedView::with_fixed_height(2 * y / 3, answer_view)),
+                    .child(answer_list_view.scrollable().fixed_height(y / 3))
+                    .child(Panel::new(answer_view.scrollable()).fixed_height(2 * y / 3)),
             )),
-    );
+    ));
     let cb = siv.call_on_name("question_list", |v: &mut SelectView<u32>| {
         v.set_selection(0)
     });
@@ -199,7 +202,7 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
 // Also, it might be that we control all scrolling from the top
 fn make_select_scrollable(
     view: NamedView<SelectView<u32>>,
-) -> OnEventView<NamedView<SelectView<u32>>> {
+) -> ScrollView<OnEventView<NamedView<SelectView<u32>>>> {
     // Clobber existing functionality:
     OnEventView::new(view)
         .on_pre_event_inner('k', |s, _| {
@@ -208,6 +211,7 @@ fn make_select_scrollable(
         .on_pre_event_inner('j', |s, _| {
             Some(EventResult::Consumed(Some(s.get_mut().select_down(1))))
         })
+        .scrollable()
 }
 
 // TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!

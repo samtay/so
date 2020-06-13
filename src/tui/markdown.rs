@@ -6,6 +6,8 @@
 //! cell) might be easier in this setting anyway.
 // Figure out why the hell cursive needs to keep around the input string?
 
+// TODO use ColorStyle::secondary() etc. over specific enums
+
 use cursive::theme::{Effect, PaletteColor, Style};
 use cursive::utils::markup::{StyledIndexedSpan, StyledString};
 use cursive::utils::span::{IndexedCow, IndexedSpan};
