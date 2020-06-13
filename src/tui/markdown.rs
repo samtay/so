@@ -4,32 +4,80 @@
 //! TODO: Bring in the full power of termimad (e.g. md tables) in a View;
 //! implementation of those features (.e.g automatic wrapping within each table
 //! cell) might be easier in this setting anyway.
-
-use std::borrow::Cow;
+// Figure out why the hell cursive needs to keep around the input string?
 
 use cursive::theme::{Effect, PaletteColor, Style};
 use cursive::utils::markup::{StyledIndexedSpan, StyledString};
-use cursive::utils::span::IndexedCow;
-
-use pulldown_cmark::{self, CowStr, Event, Tag};
+use cursive::utils::span::{IndexedCow, IndexedSpan};
+use pulldown_cmark::{self, CowStr, Event, Options, Tag};
+use std::borrow::Cow;
 use unicode_width::UnicodeWidthStr;
+
+use super::entities::is_entity;
 
 /// Parses the given string as markdown text.
 pub fn parse<S>(input: S) -> StyledString
 where
     S: Into<String>,
 {
-    // TODO handle other stackexchange oddities here
-    // TODO then benchmark
-    let input = input
-        .into()
-        .replace("<kbd>", "**[")
-        .replace("</kbd>", "]**");
-
+    let input = preprocess(input.into());
     let spans = parse_spans(&input);
+    //let output = build_output(&spans);
+    StyledString::with_spans(input, spans)
+}
+
+/// Preview markdown. Largely heuristic.
+pub fn preview<S>(size: usize, input: S) -> StyledString
+where
+    S: Into<String>,
+{
+    // DO the initial parsing here too, not just in `parse`
+    let generous_size = (size as f32) * 1.2;
+    let generous_size = generous_size.ceil();
+    let generous_size = generous_size as usize;
+    let mut input = input.into();
+    input.truncate(generous_size);
+    let input = preprocess(input);
+    let spans = parse_spans(&input)
+        .into_iter()
+        // Filter out newlines
+        .map(|ix_span| match ix_span {
+            IndexedSpan { width: 0, .. } => IndexedSpan {
+                content: IndexedCow::Owned(" ".to_owned()),
+                width: 1,
+                ..ix_span
+            },
+            is => is,
+        })
+        .collect();
 
     StyledString::with_spans(input, spans)
 }
+
+fn preprocess(input: String) -> String {
+    // TODO handle other stackexchange oddities here ENTITIES
+    // TODO then benchmark
+    let input = input
+        .as_str()
+        .trim()
+        .replace("<kbd>", "**[")
+        .replace("</kbd>", "]**");
+    input
+}
+
+/// Parse the given markdown text into a list of spans.
+/// Assumes preprocessing has taken place
+/// This is a shortcut for `Parser::new(preprocessed_input).collect()`.
+fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
+    Parser::new(input).collect()
+}
+
+/// Cheat my way through cursive's obscure crap
+//fn build_output(spans: Vec<StyledIndexedSpan>) -> String {
+//spans.iter().fold("", |mut o, s| {
+//o += s.content.to_string();
+//})
+//}
 
 /// Iterator that parse a markdown text and outputs styled spans.
 pub struct Parser<'a> {
@@ -45,13 +93,16 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     /// Creates a new parser with the given input text.
     pub fn new(input: &'a str) -> Self {
+        let mut opts = pulldown_cmark::Options::empty();
+        opts.insert(Options::ENABLE_STRIKETHROUGH);
+        opts.insert(Options::ENABLE_TASKLISTS);
         Parser {
             input,
             item: None,
             in_list: false,
             after_code_block: false,
             first: true,
-            parser: pulldown_cmark::Parser::new(input),
+            parser: pulldown_cmark::Parser::new_ext(input, opts),
             stack: Vec::new(),
         }
     }
@@ -73,11 +124,18 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // Big hack here because cursive nonsense;
+    // Do some benchmarking and see if the performance is worse
+    // by searching the entity set; if so, just own everything
     fn cowstr_to_span(&self, text: CowStr, style: Option<Style>) -> StyledIndexedSpan {
         let text = match text {
             CowStr::Boxed(text) => Cow::Owned(text.into()),
-            CowStr::Borrowed(text) => Cow::Borrowed(text),
             CowStr::Inlined(text) => Cow::Owned(text.to_string()),
+            // If markdown parsed an HTML entity, own the string to avoid panicking in
+            // cursive::utils::span::from_cow
+            CowStr::Borrowed(text) if is_entity(text) => Cow::Owned(text.to_string()),
+            // Otherwise, borrow
+            CowStr::Borrowed(text) => Cow::Borrowed(text),
         };
         self.cow_to_span(text, style)
     }
@@ -188,14 +246,8 @@ impl<'a> Iterator for Parser<'a> {
     }
 }
 
-/// Parse the given markdown text into a list of spans.
-///
-/// This is a shortcut for `Parser::new(input).collect()`.
-pub fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
-    Parser::new(input).collect()
-}
-
-// TODO: how to reverse a list in Python answer is broken; test it here!
+// TODO: `how to reverse a list in Python` broken:
+// due to newline problem in pulldowm_cmark and stackexchange differences
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -207,8 +259,8 @@ mod tests {
 Attention
 ====
 I *really* love __Cursive__!";
-        let spans = parse_spans(input);
-        let spans: Vec<_> = spans.iter().map(|span| span.resolve(input)).collect();
+        let parsed = parse(input);
+        let spans: Vec<_> = parsed.spans().into_iter().collect();
         let expected_spans = &[
             Span {
                 content: "Attention",
@@ -267,8 +319,8 @@ and
 code fences
 ```
 Obviously.";
-        let spans = parse_spans(input);
-        let spans: Vec<_> = spans.iter().map(|span| span.resolve(input)).collect();
+        let parsed = parse(input);
+        let spans: Vec<_> = parsed.spans().into_iter().collect();
         let expected_spans = &[
             Span {
                 content: "project",
@@ -369,9 +421,13 @@ Obviously.";
 0. Then another
 or
 - do them
-- out of order";
-        let spans = parse_spans(input);
-        let spans: Vec<_> = spans.iter().map(|span| span.resolve(input)).collect();
+- out of order
+and tasks
+- [ ] undone, or
+- [x] done!
+";
+        let parsed = parse(input);
+        let spans: Vec<_> = parsed.spans().into_iter().collect();
         let expected_spans = &[
             Span {
                 content: "1. ",
@@ -445,6 +501,135 @@ or
             },
         ];
 
+        for (span, expected_span) in spans.iter().zip(expected_spans.iter()) {
+            assert_eq!(span, expected_span);
+        }
+    }
+    #[test]
+    fn test_from_cow_panic() {
+        let input = "
+I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 1.1 installed.\r\n\r\nAfter I hit <kbd>Esc</kbd> to exit insert mode I can't figure out how to save and quit. Hitting <kbd>Ctrl</kbd> + <kbd>C</kbd> shows me instructions that say typing \"quit<enter>\" will write and quit, but it doesn't seem to work.\r\n\r\n\r\n\r\n";
+        let parsed = parse(input);
+        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let expected_spans = &[
+            Span {
+                content: "I\'m on a Mac running OS",
+                attr: &Style::none(),
+                width: 23,
+            },
+            Span {
+                content: "\u{a0}",
+                attr: &Style::none(),
+                width: 1,
+            },
+            Span {
+                content: "X",
+                attr: &Style::none(),
+                width: 1,
+            },
+            Span {
+                content: "\u{a0}",
+                attr: &Style::none(),
+                width: 1,
+            },
+            Span {
+                content: "v10.6 (Snow",
+                attr: &Style::none(),
+                width: 11,
+            },
+            Span {
+                content: "\u{a0}",
+                attr: &Style::none(),
+                width: 1,
+            },
+            Span {
+                content: "Leopard). I have Mercurial 1.1 installed.",
+                attr: &Style::none(),
+                width: 41,
+            },
+            Span {
+                content: "\n\n",
+                attr: &Style::none(),
+                width: 0,
+            },
+            Span {
+                content: "After I hit ",
+                attr: &Style::none(),
+                width: 12,
+            },
+            Span {
+                content: "[",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: "Esc",
+                attr: &Style::from(Effect::Bold),
+                width: 3,
+            },
+            Span {
+                content: "]",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: " to exit insert mode I can\'t figure out how to save and quit. Hitting ",
+                attr: &Style::none(),
+                width: 70,
+            },
+            Span {
+                content: "[",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: "Ctrl",
+                attr: &Style::from(Effect::Bold),
+                width: 4,
+            },
+            Span {
+                content: "]",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: " + ",
+                attr: &Style::none(),
+                width: 3,
+            },
+            Span {
+                content: "[",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: "C",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: "]",
+                attr: &Style::from(Effect::Bold),
+                width: 1,
+            },
+            Span {
+                content: " shows me instructions that say typing \"quit",
+                attr: &Style::none(),
+                width: 44,
+            },
+            Span {
+                content: "<enter>",
+                attr: &Style::none(),
+                width: 7,
+            },
+            Span {
+                content: "\" will write and quit, but it doesn\'t seem to work.",
+                attr: &Style::none(),
+                width: 51,
+            },
+        ];
+
+        assert_eq!(spans, expected_spans);
         for (span, expected_span) in spans.iter().zip(expected_spans.iter()) {
             assert_eq!(span, expected_span);
         }
