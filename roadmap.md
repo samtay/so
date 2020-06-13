@@ -11,12 +11,11 @@
 [x] Finishing touches on cli opts like --set-api-key, etc.
 
 ### v0.2.0
-[ ] Add --no-lucky option
-[ ] For --lucky, async parsing first q/a, then the rest
 [ ] Termimad interface for viewing multiple results
 
 ### v0.2.1
-[ ] Add colors.yml configuration
+[ ] Add --no-lucky option
+[ ] For --lucky, async parsing first q/a, then the rest
 
 ### v0.2.2
 [ ] Support multiple --site args & searches

@@ -1,9 +1,12 @@
 use cursive::event::EventResult;
+use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::traits::Nameable;
-use cursive::view::{View, ViewWrapper};
+use cursive::utils::span::SpannedString;
 use cursive::views::{
-    LinearLayout, NamedView, OnEventView, ResizedView, SelectView, TextContent, TextView,
+    LinearLayout, NamedView, OnEventView, Panel, ResizedView, SelectView, TextContent, TextView,
 };
+use cursive::XY;
+use std::cmp;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -50,6 +53,8 @@ pub enum Mode {
 }
 
 // TODO make my own views for lists, md, etc, and use cursive::inner_getters!
+// (or at least type synonyms)
+// and abstract out the common builder funcs
 
 //pub struct App<'a> {
 //pub stackexchange: StackExchange,
@@ -71,6 +76,7 @@ pub enum Mode {
 pub fn run(qs: Vec<Question>) -> Result<()> {
     let mut siv = cursive::default();
     siv.load_theme_file(config::theme_file_name()?).unwrap(); // TODO dont unwrap
+    let XY { x, y } = siv.screen_size();
 
     //app state
     //put this in siv.set_user_data? hmm
@@ -90,35 +96,62 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     let current_question = TextContent::new(""); // init would be great
     let question_view: NamedView<TextView> =
         TextView::new_with_content(current_question.clone()).with_name("question");
+    let question_view = Panel::new(question_view);
 
     // answer view
     let current_answer = TextContent::new(""); // init would be great
     let answer_view: NamedView<TextView> =
         TextView::new_with_content(current_answer.clone()).with_name("answer");
+    let answer_view = Panel::new(answer_view);
 
     // question list view
     //let question_map_ = question_map.clone();
     //let current_question_ = current_question.clone();
-    let question_list_view: NamedView<SelectView<u32>> = SelectView::new()
+    // TODO fuck select view has indexing capabilities :facepalm:
+    let mut question_list_view: NamedView<SelectView<u32>> = SelectView::new()
         .with_all(qs.into_iter().map(|q| (q.title, q.id)))
-        .on_select(move |s, qid| {
+        .on_select(move |mut s, qid| {
             let q = question_map.get(qid).unwrap();
+            let XY { x, y: _y } = s.screen_size();
             current_question.set_content(markdown::parse(&q.body));
-            s.call_on_name("answer_list", move |v: &mut SelectView<u32>| {
+            let cb = s.call_on_name("answer_list", move |v: &mut SelectView<u32>| {
                 v.clear();
                 v.add_all(q.answers.iter().map(|a| {
-                    // TODO dedup newlines, split newlines, join with spaces
-                    // add ellipses
-                    // set const for cutoff
+                    // TODO make a damn func for this
                     // add score & accepted checkmark
-                    let mut a_body = a.body.clone();
-                    a_body.truncate(50);
-                    (markdown::parse(a_body), a.id)
+                    let width = cmp::min(a.body.len(), x / 2);
+                    let a_body = a.body[..width].to_owned();
+                    let md = markdown::preview(x, a_body);
+                    let color = if a.score > 0 {
+                        Color::Light(BaseColor::Green)
+                    } else {
+                        Color::Light(BaseColor::Red)
+                    };
+                    let mut preview = SpannedString::styled(
+                        format!("({}) ", a.score),
+                        Style::merge(&[Style::from(color), Style::from(Effect::Bold)]),
+                    );
+                    if a.is_accepted {
+                        preview.append_styled(
+                            "\u{2713} ", // "✔ "
+                            Style::merge(&[
+                                Style::from(Color::Light(BaseColor::Green)),
+                                Style::from(Effect::Bold),
+                            ]),
+                        );
+                    }
+                    preview.append(md);
+                    (preview, a.id)
                 }));
-            }); // TODO select initial answer
-        }) // TODO select initial question
+                v.set_selection(0)
+            });
+            if let Some(cb) = cb {
+                cb(&mut s)
+            }
+        })
         .with_name("question_list");
     let question_list_view = make_select_scrollable(question_list_view);
+    let question_list_view = Panel::new(question_list_view).title("Questions");
 
     // answer list view
     //let answer_map_ = answer_map.clone();
@@ -130,24 +163,33 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
         })
         .with_name("answer_list");
     let answer_list_view = make_select_scrollable(answer_list_view);
+    let answer_list_view = Panel::new(answer_list_view).title("Answers");
 
     //TODO eventually do this in the right place, e.g. abstract out md
     //parser, write benches, & do within threads
     siv.add_layer(
         LinearLayout::horizontal()
-            .child(ResizedView::with_min_width(
-                30,
+            .child(ResizedView::with_fixed_width(
+                x / 2,
                 LinearLayout::vertical()
-                    .child(ResizedView::with_min_height(15, question_list_view))
-                    .child(ResizedView::with_min_height(20, question_view)),
+                    .child(ResizedView::with_fixed_height(y / 3, question_list_view))
+                    .child(ResizedView::with_fixed_height(2 * y / 3, question_view)),
             ))
-            .child(ResizedView::with_min_width(
-                30,
+            .child(ResizedView::with_fixed_width(
+                x / 2,
                 LinearLayout::vertical()
-                    .child(ResizedView::with_min_height(15, answer_list_view))
-                    .child(ResizedView::with_min_height(20, answer_view)),
+                    .child(ResizedView::with_fixed_height(y / 3, answer_list_view))
+                    .child(ResizedView::with_fixed_height(2 * y / 3, answer_view)),
             )),
     );
+    let cb = siv.call_on_name("question_list", |v: &mut SelectView<u32>| {
+        v.set_selection(0)
+    });
+    if let Some(cb) = cb {
+        cb(&mut siv)
+    }
+    cursive::logger::init();
+    siv.add_global_callback('?', cursive::Cursive::toggle_debug_console);
     siv.run();
     Ok(())
 }
@@ -158,14 +200,13 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
 fn make_select_scrollable(
     view: NamedView<SelectView<u32>>,
 ) -> OnEventView<NamedView<SelectView<u32>>> {
+    // Clobber existing functionality:
     OnEventView::new(view)
         .on_pre_event_inner('k', |s, _| {
-            s.get_mut().select_up(1);
-            Some(EventResult::Consumed(None))
+            Some(EventResult::Consumed(Some(s.get_mut().select_up(1))))
         })
         .on_pre_event_inner('j', |s, _| {
-            s.get_mut().select_down(1);
-            Some(EventResult::Consumed(None))
+            Some(EventResult::Consumed(Some(s.get_mut().select_down(1))))
         })
 }
 

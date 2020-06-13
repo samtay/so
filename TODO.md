@@ -7,21 +7,26 @@ benefit of incorporating termimad features will not be felt. But, this is
 changing [soon](https://meta.stackexchange.com/q/348746).
 
 ### v0.2.0
-0. Cursive interface for viewing questions and answers
-1. Focus in one of four areas
-3. arrows and vim bindings to manipulate lists and scroll, depending on focus
-2. `/` to bring up new search prompt
-1. For sure: Use custom code palette nodes in theme.toml to style markdown
-1. Layout cycling?
-0. use [par_iter](https://github.com/rayon-rs/rayon) for parsing markdown and manual <kbd> removers, etc.
+
+#### Cursive interface for viewing questions and answers
+0. Split up `run` function with many little helper functions defining callbacks
+   and stull general to both the question and answer panes
+1. Make each pane scrollable
+2. Handle focus with tab and h,l
+4. Allow cycling layouts
+5. Init with smaller layout if terminal size smaller
+6. Small text at bottom with '?' to bring up key mapping dialog
+7. `/` to bring up new search prompt
+
+#### other
+1. Use [par_iter](https://github.com/rayon-rs/rayon) for text preprocess & parsing?
+
+### v0.2.1
 1. Add `lucky: bool` to config, but
 2. add --lucky and --no-lucky conflicting flags to cli
 3. If --lucky, async get 1 result while getting limit results
 4. Display with [space] to see more, any other key to exit.
 1. maybe <query> is optional, and leaving blank starts up TUI?
-
-### v0.2.1
-1. Add colors.yml configuration
 
 ### v0.2.2
 1. Site can be multiple

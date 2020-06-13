@@ -51,7 +51,9 @@ where
         })
         .collect();
 
-    StyledString::with_spans(input, spans)
+    let mut prev = StyledString::with_spans(input, spans);
+    prev.append_plain("...");
+    prev
 }
 
 fn preprocess(input: String) -> String {
