@@ -1,13 +1,16 @@
-use cursive::event::{Callback, EventResult};
+use cursive::event::{Callback, Event, EventResult};
 use cursive::traits::{Finder, Nameable, Resizable, Scrollable};
 use cursive::utils::markup::StyledString;
 use cursive::view::{Margins, SizeConstraint, View, ViewWrapper};
 use cursive::views::{
-    LinearLayout, NamedView, OnEventView, PaddedView, Panel, ScrollView, SelectView, TextView,
+    LinearLayout, NamedView, OnEventView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
+    TextView,
 };
 use cursive::{Cursive, Vec2};
+use std::cell::RefCell;
 use std::fmt;
 use std::fmt::Display;
+use std::rc::Rc;
 
 use super::markdown;
 use crate::error::Result;
@@ -16,6 +19,7 @@ pub const NAME_QUESTION_LIST: &str = "question_list";
 pub const NAME_ANSWER_LIST: &str = "answer_list";
 pub const NAME_QUESTION_VIEW: &str = "question_view";
 pub const NAME_ANSWER_VIEW: &str = "answer_view";
+pub const NAME_FULL_LAYOUT: &str = "full_layout";
 
 // TODO might need resizable wrappers in types
 
@@ -49,7 +53,8 @@ impl From<Name> for String {
 }
 
 // TODO maybe I should use cursive's ListView over SelectView ?
-pub type ListView = ListViewT<Panel<ScrollView<OnEventView<NamedView<SelectView<u32>>>>>>;
+pub type ListView =
+    ListViewT<ResizedView<Panel<ScrollView<OnEventView<NamedView<SelectView<u32>>>>>>>;
 
 pub struct ListViewT<T: View> {
     inner_name: String,
@@ -92,6 +97,7 @@ impl ListView {
         let view = add_vim_bindings(view);
         let view = view.scrollable();
         let view = Panel::new(view).title(format!("{}", name));
+        let view = view.resized(SizeConstraint::Free, SizeConstraint::Free);
         let view = ListViewT { view, inner_name };
         view.with_name(name)
     }
@@ -118,9 +124,13 @@ impl ListView {
     {
         self.view.call_on_name(&self.inner_name, cb).expect("TODO")
     }
+
+    pub fn resize(&mut self, width: SizeConstraint, height: SizeConstraint) {
+        self.view.set_constraints(width, height);
+    }
 }
 
-pub type MdView = MdViewT<Panel<ScrollView<NamedView<TextView>>>>;
+pub type MdView = MdViewT<ResizedView<Panel<ScrollView<NamedView<TextView>>>>>;
 
 pub struct MdViewT<T: View> {
     inner_name: String,
@@ -137,6 +147,7 @@ impl MdView {
         let view = TextView::empty().with_name(&inner_name);
         let view = view.scrollable();
         let view = Panel::new(view);
+        let view = view.resized(SizeConstraint::Free, SizeConstraint::Free);
         let view = MdViewT { view, inner_name };
         view.with_name(name)
     }
@@ -152,70 +163,139 @@ impl MdView {
             })
             .expect("unwrap failed in MdView.set_content")
     }
+
+    pub fn resize(&mut self, width: SizeConstraint, height: SizeConstraint) {
+        self.view.set_constraints(width, height);
+    }
 }
 
 pub type FullLayout = FullLayoutT<PaddedView<LinearLayout>>;
 
 pub struct FullLayoutT<T: View> {
     view: T,
-    lr_margin: usize,
+    invalidated: bool,
+}
+
+struct FullLayoutSizing {
+    width: SizeConstraint,
+    list_height: SizeConstraint,
+    view_height: SizeConstraint,
 }
 
 // TODO set child widths based on parent
 impl ViewWrapper for FullLayoutT<PaddedView<LinearLayout>> {
     cursive::wrap_impl!(self.view: PaddedView<LinearLayout>);
 
-    fn wrap_layout(&mut self, size: Vec2) {
-        let margin = self.lr_margin;
-        let horiz_xy = size.map_x(|x| x / 2 - margin);
-        for ix in 0..2 {
-            self.view
-                .get_inner_mut()
-                .get_child_mut(ix)
-                .and_then(|pane| {
-                    // Set top level horizontal constraints
-                    pane.layout(horiz_xy);
-                    // Then coerce the inner linear layouts
-                    pane.downcast_mut()
-                })
-                // And get their children
-                .and_then(|v: &mut LinearLayout| v.get_child_mut(0))
-                // And set the inner vertical constraints
-                .map(|v| v.layout(horiz_xy.map_y(|y| (ix + 1) * y / 3)));
+    // TODO what the actual fuck is wrong with this lifetime?
+    //  cursive does this shit all over the place...
+    // For now just issue a call_on_name like an asshat
+    fn wrap_on_event(&mut self, event: Event) -> EventResult {
+        if let Event::WindowResize = event {
+            println!("resize event thrown");
+            self.invalidated = true;
         }
+        self.view.on_event(event)
+    }
+
+    fn wrap_required_size(&mut self, req: Vec2) -> Vec2 {
+        req
+    }
+
+    fn wrap_layout(&mut self, size: Vec2) {
+        self.resize(size);
+        self.invalidated = false;
+        self.view.layout(size);
+    }
+
+    fn wrap_needs_relayout(&self) -> bool {
+        self.invalidated || self.view.needs_relayout()
     }
 }
 
 impl FullLayout {
     pub fn new(
         lr_margin: usize,
-        screen_size: Vec2,
         q_list: NamedView<ListView>,
         q_view: NamedView<MdView>,
         a_list: NamedView<ListView>,
         a_view: NamedView<MdView>,
-    ) -> Self {
-        let heuristic = 1;
-        let x = SizeConstraint::Fixed(screen_size.x / 2 - lr_margin - heuristic);
-        let y_list = SizeConstraint::AtMost(screen_size.y / 3);
-        let y_view = SizeConstraint::Full; //AtLeast(2 * screen_size.y / 3);
+    ) -> NamedView<Self> {
         let view = LinearLayout::horizontal()
             .child(
                 // TODO decide whats better, horizontal sizing on the outside,
                 // or keeping both sizings on the 4 internal views
-                LinearLayout::vertical()
-                    .child(q_list.resized(x, y_list))
-                    .child(q_view.resized(x, y_view))
-                    .with_name("question-pane"), // TODO constants
+                LinearLayout::vertical().child(q_list).child(q_view),
             )
-            .child(
-                LinearLayout::vertical()
-                    .child(a_list.resized(x, y_list))
-                    .child(a_view.resized(x, y_view))
-                    .with_name("answer-pane"),
-            );
+            .child(LinearLayout::vertical().child(a_list).child(a_view));
         let view = PaddedView::new(Margins::lrtb(lr_margin, lr_margin, 0, 0), view);
-        FullLayoutT { view, lr_margin }
+        (FullLayoutT {
+            view,
+            invalidated: true,
+        })
+        .with_name(NAME_FULL_LAYOUT)
+    }
+
+    // public for now TODO remove
+    pub fn resize(&mut self, size: Vec2) {
+        let FullLayoutSizing {
+            width,
+            list_height,
+            view_height,
+        } = self.get_constraints(size);
+        self.view
+            .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
+                v.resize(width, list_height)
+            })
+            .expect("TODO");
+        self.view
+            .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
+                v.resize(width, list_height)
+            })
+            .expect("TODO");
+        self.view
+            .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
+                v.resize(width, view_height)
+            })
+            .expect("TODO");
+        self.view
+            .call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
+                v.resize(width, view_height)
+            })
+            .expect("TODO");
+        //.and_then(View::downcast_mut)
+        //.map(View::downcast_mut)
+        //.map(|v: &mut LinearLayout| {
+        //println!("downcast successful!");
+        //v.get_child_mut(0).and_then(View::downcast_mut).map(
+        //|v: &mut ResizedView<NamedView<ListView>>| {
+        //println!("LIST CONSTRAINTS SET");
+        //v.set_constraints(width, list_height);
+        //},
+        //);
+        //v.get_child_mut(1).and_then(View::downcast_mut).map(
+        //|v: &mut ResizedView<NamedView<ListView>>| {
+        //println!("VIEW CONSTRAINTS SET");
+        //v.set_constraints(width, list_height);
+        //},
+        //)
+        //});
+    }
+
+    fn get_constraints(&self, screen_size: Vec2) -> FullLayoutSizing {
+        let heuristic = 1;
+        let width = SizeConstraint::Fixed(screen_size.x / 2 - heuristic);
+        let list_height = SizeConstraint::AtMost(screen_size.y / 3);
+        let view_height = SizeConstraint::Full; //AtLeast(2 * screen_size.y / 3);
+        println!(
+            "list constraints: {} x {}",
+            screen_size.x / 2 - heuristic,
+            screen_size.y / 3
+        );
+        FullLayoutSizing {
+            width,
+            list_height,
+            view_height,
+        }
     }
 }
 

@@ -1,3 +1,4 @@
+use cursive::event::{Callback, Event, EventResult};
 use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
@@ -9,8 +10,8 @@ use std::sync::Arc;
 
 use super::markdown;
 use super::views::{
-    FullLayout, ListView, MdView, Name, NAME_ANSWER_LIST, NAME_ANSWER_VIEW, NAME_QUESTION_LIST,
-    NAME_QUESTION_VIEW,
+    FullLayout, ListView, MdView, Name, NAME_ANSWER_LIST, NAME_ANSWER_VIEW, NAME_FULL_LAYOUT,
+    NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
 };
 use crate::config;
 use crate::error::Result;
@@ -85,7 +86,6 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
 
     siv.add_layer(FullLayout::new(
         1,
-        siv.screen_size(),
         question_list_view,
         question_view,
         answer_list_view,
