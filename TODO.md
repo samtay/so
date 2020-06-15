@@ -9,9 +9,6 @@ changing [soon](https://meta.stackexchange.com/q/348746).
 ### v0.2.0
 
 #### Cursive interface for viewing questions and answers
-0. Split up `run` function with many little helper functions defining callbacks
-   and stull general to both the question and answer panes
-1. Make each pane scrollable
 2. Handle focus with tab and h,l
 4. Allow cycling layouts
 5. Init with smaller layout if terminal size smaller

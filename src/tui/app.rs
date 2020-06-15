@@ -1,18 +1,17 @@
-use cursive::event::EventResult;
 use cursive::theme::{BaseColor, Color, Effect, Style};
-use cursive::traits::{Nameable, Resizable, Scrollable};
+use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
-use cursive::view::Margins;
-use cursive::views::{
-    LinearLayout, NamedView, OnEventView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
-    TextContent, TextView,
-};
+use cursive::Cursive;
 use cursive::XY;
 use std::cmp;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::markdown;
+use super::views::{
+    FullLayout, ListView, MdView, Name, NAME_ANSWER_LIST, NAME_ANSWER_VIEW, NAME_QUESTION_LIST,
+    NAME_QUESTION_VIEW,
+};
 use crate::config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
@@ -30,29 +29,6 @@ use crate::stackexchange::{Answer, Question};
 
 // TODO Circular Focus handles layout & focus & stuff
 // TODO these might be "layers" ?
-
-pub enum Layout {
-    BothColumns,
-    SingleColumn,
-    FullScreen,
-}
-
-// Tab to cycle focus
-// TODO use NamedView
-pub enum Focus {
-    QuestionList,
-    AnswerList,
-    Question,
-    Answer,
-}
-
-pub enum Mode {
-    /// Akin to vim, keys are treated as commands
-    Normal,
-    /// Akin to vim, user is typing in bottom prompt
-    Insert,
-    // TODO if adding a search feature, that will be anther mode
-}
 
 // TODO make my own views for lists, md, etc, and use cursive::inner_getters!
 // (or at least type synonyms)
@@ -72,13 +48,11 @@ pub enum Mode {
 //}
 
 // TODO maybe a struct like Tui::new(stackexchange) creates App::new and impls tui.run()?
-// TODO views::SelectView?
 // TODO take async questions
 // TODO take the entire SE struct for future questions
 pub fn run(qs: Vec<Question>) -> Result<()> {
     let mut siv = cursive::default();
     siv.load_theme_file(config::theme_file_name()?).unwrap(); // TODO dont unwrap
-    let XY { x, y } = siv.screen_size();
 
     //app state
     //put this in siv.set_user_data? hmm
@@ -94,124 +68,96 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
         .collect();
     let answer_map = Arc::new(answer_map);
 
-    // question view
-    let current_question = TextContent::new(""); // init would be great
-    let question_view: NamedView<TextView> =
-        TextView::new_with_content(current_question.clone()).with_name("question");
+    let question_view = MdView::new(Name::QuestionView);
+    let answer_view = MdView::new(Name::AnswerView);
 
-    // answer view
-    let current_answer = TextContent::new(""); // init would be great
-    let answer_view: NamedView<TextView> =
-        TextView::new_with_content(current_answer.clone()).with_name("answer");
+    let question_list_view = ListView::new_with_items(
+        Name::QuestionList,
+        qs.into_iter().map(|q| (preview_question(&q), q.id)),
+        move |s, qid| question_selected_callback(question_map.clone(), s, qid),
+    );
 
-    // question list view
-    //let question_map_ = question_map.clone();
-    //let current_question_ = current_question.clone();
-    // TODO fuck select view has indexing capabilities :facepalm:
-    let mut question_list_view: NamedView<SelectView<u32>> = SelectView::new()
-        .with_all(qs.into_iter().map(|q| (q.title, q.id)))
-        .on_select(move |mut s, qid| {
-            let q = question_map.get(qid).unwrap();
-            let XY { x, y: _y } = s.screen_size();
-            current_question.set_content(markdown::parse(&q.body));
-            let cb = s.call_on_name("answer_list", |v: &mut SelectView<u32>| {
-                v.clear();
-                v.add_all(q.answers.iter().map(|a| {
-                    // TODO make a damn func for this
-                    // add score & accepted checkmark
-                    let width = cmp::min(a.body.len(), x / 2);
-                    let a_body = a.body[..width].to_owned();
-                    let md = markdown::preview(x, a_body);
-                    let color = if a.score > 0 {
-                        Color::Light(BaseColor::Green)
-                    } else {
-                        Color::Light(BaseColor::Red)
-                    };
-                    let mut preview = SpannedString::styled(
-                        format!("({}) ", a.score),
-                        Style::merge(&[Style::from(color), Style::from(Effect::Bold)]),
-                    );
-                    if a.is_accepted {
-                        preview.append_styled(
-                            "\u{2713} ", // "✔ "
-                            Style::merge(&[
-                                Style::from(Color::Light(BaseColor::Green)),
-                                Style::from(Effect::Bold),
-                            ]),
-                        );
-                    }
-                    preview.append(md);
-                    (preview, a.id)
-                }));
-                v.set_selection(0)
-            });
-            if let Some(cb) = cb {
-                cb(&mut s)
-            }
-        })
-        .with_name("question_list");
-    let question_list_view = make_select_scrollable(question_list_view);
-    let question_list_view = Panel::new(question_list_view).title("Questions");
-
-    // answer list view
-    //let answer_map_ = answer_map.clone();
-    //let current_answer_ = current_question.clone();
-    let answer_list_view: NamedView<SelectView<u32>> = SelectView::new()
-        .on_select(move |_, aid| {
-            let a = answer_map.get(aid).unwrap();
-            current_answer.set_content(markdown::parse(&a.body));
-        })
-        .with_name("answer_list");
-    let answer_list_view = make_select_scrollable(answer_list_view);
-    let answer_list_view = Panel::new(answer_list_view).title("Answers");
-
-    //TODO eventually do this in the right place, e.g. abstract out md
-    //parser, write benches, & do within threads
-    let margin = 1;
-    let x = if x % 2 == 0 { x - 1 } else { x };
-    siv.add_layer(PaddedView::new(
-        Margins::lrtb(margin, margin, 0, 0),
-        LinearLayout::horizontal()
-            .child(ResizedView::with_fixed_width(
-                (x - 2 * margin) / 2,
-                LinearLayout::vertical()
-                    .child(question_list_view.scrollable().fixed_height(y / 3))
-                    .child(Panel::new(question_view.scrollable()).fixed_height(2 * y / 3)),
-            ))
-            .child(ResizedView::with_fixed_width(
-                (x - 2 * margin) / 2,
-                LinearLayout::vertical()
-                    .child(answer_list_view.scrollable().fixed_height(y / 3))
-                    .child(Panel::new(answer_view.scrollable()).fixed_height(2 * y / 3)),
-            )),
-    ));
-    let cb = siv.call_on_name("question_list", |v: &mut SelectView<u32>| {
-        v.set_selection(0)
+    // TODO init with qs[0].answers ?
+    let answer_list_view = ListView::new(Name::AnswerList, move |s, aid| {
+        let a = answer_map.get(aid).unwrap();
+        s.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| v.set_content(&a.body));
     });
+
+    siv.add_layer(FullLayout::new(
+        1,
+        siv.screen_size(),
+        question_list_view,
+        question_view,
+        answer_list_view,
+        answer_view,
+    ));
+
+    let cb = siv.call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| v.select(0));
     if let Some(cb) = cb {
         cb(&mut siv)
     }
     cursive::logger::init();
     siv.add_global_callback('?', cursive::Cursive::toggle_debug_console);
+    println!("{:?}", siv.debug_name(NAME_QUESTION_VIEW));
     siv.run();
     Ok(())
 }
 
-// TODO move this out to utils
-// use LastSizeView if i want to resize things with shift <HJKL>
-// Also, it might be that we control all scrolling from the top
-fn make_select_scrollable(
-    view: NamedView<SelectView<u32>>,
-) -> ScrollView<OnEventView<NamedView<SelectView<u32>>>> {
-    // Clobber existing functionality:
-    OnEventView::new(view)
-        .on_pre_event_inner('k', |s, _| {
-            Some(EventResult::Consumed(Some(s.get_mut().select_up(1))))
+// TODO need to get size of question list view, as this will change depending on layout
+fn question_selected_callback(
+    question_map: Arc<HashMap<u32, Question>>,
+    mut s: &mut Cursive,
+    qid: &u32,
+) {
+    let q = question_map.get(qid).unwrap();
+    let XY { x, y: _y } = s.screen_size();
+    // Update question view
+    s.call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
+        v.set_content(&q.body);
+    })
+    .expect("TODO: make sure this is callable: setting question body on view");
+    // Update answer list view
+    let cb = s
+        .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
+            v.reset_with_all(q.answers.iter().map(|a| (preview_answer(x, a), a.id)))
         })
-        .on_pre_event_inner('j', |s, _| {
-            Some(EventResult::Consumed(Some(s.get_mut().select_down(1))))
-        })
-        .scrollable()
+        .expect("TODO why would this ever fail");
+    cb(&mut s)
+}
+
+fn preview_question(q: &Question) -> StyledString {
+    let mut preview = pretty_score(q.score);
+    preview.append_plain(&q.title);
+    preview
+}
+
+fn preview_answer(screen_width: usize, a: &Answer) -> StyledString {
+    let width = cmp::min(a.body.len(), screen_width / 2);
+    let md = markdown::preview(width, a.body.to_owned());
+    let mut preview = pretty_score(a.score);
+    if a.is_accepted {
+        preview.append_styled(
+            "\u{2713} ", // "✔ "
+            Style::merge(&[
+                Style::from(Color::Light(BaseColor::Green)),
+                Style::from(Effect::Bold),
+            ]),
+        );
+    }
+    preview.append(md);
+    preview
+}
+
+fn pretty_score(score: i32) -> StyledString {
+    let color = if score > 0 {
+        Color::Light(BaseColor::Green)
+    } else {
+        Color::Light(BaseColor::Red)
+    };
+    SpannedString::styled(
+        format!("({}) ", score),
+        Style::merge(&[Style::from(color), Style::from(Effect::Bold)]),
+    )
 }
 
 // TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!
