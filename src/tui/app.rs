@@ -1,4 +1,3 @@
-use cursive::event::{Callback, Event, EventResult};
 use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
@@ -10,8 +9,8 @@ use std::sync::Arc;
 
 use super::markdown;
 use super::views::{
-    FullLayout, ListView, MdView, Name, NAME_ANSWER_LIST, NAME_ANSWER_VIEW, NAME_FULL_LAYOUT,
-    NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
+    LayoutView, ListView, MdView, Name, NAME_ANSWER_LIST, NAME_ANSWER_VIEW, NAME_QUESTION_LIST,
+    NAME_QUESTION_VIEW,
 };
 use crate::config;
 use crate::error::Result;
@@ -84,7 +83,7 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
         s.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| v.set_content(&a.body));
     });
 
-    siv.add_layer(FullLayout::new(
+    siv.add_layer(LayoutView::new(
         1,
         question_list_view,
         question_view,
@@ -98,7 +97,6 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     }
     cursive::logger::init();
     siv.add_global_callback('?', cursive::Cursive::toggle_debug_console);
-    println!("{:?}", siv.debug_name(NAME_QUESTION_VIEW));
     siv.run();
     Ok(())
 }
@@ -132,7 +130,7 @@ fn preview_question(q: &Question) -> StyledString {
 }
 
 fn preview_answer(screen_width: usize, a: &Answer) -> StyledString {
-    let width = cmp::min(a.body.len(), screen_width / 2);
+    let width = cmp::min(a.body.len(), screen_width);
     let md = markdown::preview(width, a.body.to_owned());
     let mut preview = pretty_score(a.score);
     if a.is_accepted {

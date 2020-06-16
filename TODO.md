@@ -10,10 +10,10 @@ changing [soon](https://meta.stackexchange.com/q/348746).
 
 #### Cursive interface for viewing questions and answers
 2. Handle focus with tab and h,l
-4. Allow cycling layouts
-5. Init with smaller layout if terminal size smaller
+4. Allow cycling layouts?
+5. Init with smaller layout if terminal size smaller? maybe cli --auto-resize
+   option
 6. Small text at bottom with '?' to bring up key mapping dialog
-7. `/` to bring up new search prompt
 
 #### other
 1. Use [par_iter](https://github.com/rayon-rs/rayon) for text preprocess & parsing?

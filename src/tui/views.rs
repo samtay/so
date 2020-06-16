@@ -3,11 +3,10 @@ use cursive::traits::{Finder, Nameable, Resizable, Scrollable};
 use cursive::utils::markup::StyledString;
 use cursive::view::{Margins, SizeConstraint, View, ViewWrapper};
 use cursive::views::{
-    LinearLayout, NamedView, OnEventView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
-    TextView,
+    HideableView, LinearLayout, NamedView, OnEventView, PaddedView, Panel, ResizedView, ScrollView,
+    SelectView, TextView,
 };
-use cursive::{Cursive, Vec2};
-use std::cell::RefCell;
+use cursive::{Cursive, Vec2, XY};
 use std::fmt;
 use std::fmt::Display;
 use std::rc::Rc;
@@ -52,17 +51,43 @@ impl From<Name> for String {
     }
 }
 
+trait Resize {
+    fn set_width(&mut self, width: &SizeConstraint);
+    fn set_height(&mut self, height: &SizeConstraint);
+    fn resize(&mut self, width: &SizeConstraint, height: &SizeConstraint) {
+        self.set_width(width);
+        self.set_height(height);
+    }
+}
+
+trait Hide {
+    fn set_visible(&mut self, visible: bool);
+    fn hide(&mut self) {
+        self.set_visible(false);
+    }
+    fn unhide(&mut self) {
+        self.set_visible(true);
+    }
+}
+
 // TODO maybe I should use cursive's ListView over SelectView ?
-pub type ListView =
-    ListViewT<ResizedView<Panel<ScrollView<OnEventView<NamedView<SelectView<u32>>>>>>>;
+// TODO copy one of them to allow overriding selected style => reverse video
+pub type ListView = ListViewT<
+    HideableView<ResizedView<Panel<ScrollView<OnEventView<NamedView<SelectView<u32>>>>>>>,
+>;
 
 pub struct ListViewT<T: View> {
     inner_name: String,
     view: T,
+    force_take_focus: bool,
 }
 
 impl<T: View> ViewWrapper for ListViewT<T> {
     cursive::wrap_impl!(self.view: T);
+
+    fn wrap_take_focus(&mut self, source: cursive::direction::Direction) -> bool {
+        self.force_take_focus || self.view.take_focus(source)
+    }
 }
 
 impl ListView {
@@ -98,7 +123,13 @@ impl ListView {
         let view = view.scrollable();
         let view = Panel::new(view).title(format!("{}", name));
         let view = view.resized(SizeConstraint::Free, SizeConstraint::Free);
-        let view = ListViewT { view, inner_name };
+        let view = HideableView::new(view);
+        let view = ListViewT {
+            view,
+            inner_name,
+            force_take_focus: false,
+        };
+
         view.with_name(name)
     }
 
@@ -125,20 +156,42 @@ impl ListView {
         self.view.call_on_name(&self.inner_name, cb).expect("TODO")
     }
 
-    pub fn resize(&mut self, width: SizeConstraint, height: SizeConstraint) {
-        self.view.set_constraints(width, height);
+    pub fn set_take_focus(&mut self, take: bool) {
+        self.force_take_focus = take;
     }
 }
 
-pub type MdView = MdViewT<ResizedView<Panel<ScrollView<NamedView<TextView>>>>>;
+impl Resize for ListView {
+    fn set_width(&mut self, width: &SizeConstraint) {
+        self.view.get_inner_mut().set_width(*width);
+    }
+    fn set_height(&mut self, height: &SizeConstraint) {
+        self.view.get_inner_mut().set_height(*height);
+    }
+}
+
+impl Hide for ListView {
+    fn set_visible(&mut self, visible: bool) {
+        self.view.set_visible(visible);
+    }
+}
+
+pub type MdView = MdViewT<HideableView<ResizedView<Panel<ScrollView<NamedView<TextView>>>>>>;
 
 pub struct MdViewT<T: View> {
     inner_name: String,
     view: T,
+    /// If the LayoutView is in full screen mode, MdView should always accept
+    /// focus.
+    force_take_focus: bool,
 }
 
 impl<T: View> ViewWrapper for MdViewT<T> {
     cursive::wrap_impl!(self.view: T);
+
+    fn wrap_take_focus(&mut self, source: cursive::direction::Direction) -> bool {
+        self.force_take_focus || self.view.take_focus(source)
+    }
 }
 
 impl MdView {
@@ -148,7 +201,12 @@ impl MdView {
         let view = view.scrollable();
         let view = Panel::new(view);
         let view = view.resized(SizeConstraint::Free, SizeConstraint::Free);
-        let view = MdViewT { view, inner_name };
+        let view = HideableView::new(view);
+        let view = MdViewT {
+            view,
+            inner_name,
+            force_take_focus: false,
+        };
         view.with_name(name)
     }
 
@@ -164,36 +222,64 @@ impl MdView {
             .expect("unwrap failed in MdView.set_content")
     }
 
-    pub fn resize(&mut self, width: SizeConstraint, height: SizeConstraint) {
-        self.view.set_constraints(width, height);
+    pub fn set_take_focus(&mut self, take: bool) {
+        self.force_take_focus = take;
     }
 }
 
-pub type FullLayout = FullLayoutT<PaddedView<LinearLayout>>;
-
-pub struct FullLayoutT<T: View> {
-    view: T,
-    invalidated: bool,
+impl Resize for MdView {
+    fn set_width(&mut self, width: &SizeConstraint) {
+        self.view.get_inner_mut().set_width(*width);
+    }
+    fn set_height(&mut self, height: &SizeConstraint) {
+        self.view.get_inner_mut().set_height(*height);
+    }
 }
 
-struct FullLayoutSizing {
+impl Hide for MdView {
+    fn set_visible(&mut self, visible: bool) {
+        self.view.set_visible(visible);
+    }
+}
+
+pub struct LayoutView {
+    view: PaddedView<LinearLayout>,
+    layout: Layout,
+    layout_invalidated: bool,
+    size_invalidated: bool,
+}
+
+struct LayoutViewSizing {
     width: SizeConstraint,
     list_height: SizeConstraint,
     view_height: SizeConstraint,
 }
 
-// TODO set child widths based on parent
-impl ViewWrapper for FullLayoutT<PaddedView<LinearLayout>> {
+pub enum Layout {
+    BothColumns,
+    SingleColumn,
+    FullScreen,
+}
+
+impl ViewWrapper for LayoutView {
     cursive::wrap_impl!(self.view: PaddedView<LinearLayout>);
 
     // TODO what the actual fuck is wrong with this lifetime?
     //  cursive does this shit all over the place...
     // For now just issue a call_on_name like an asshat
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
-        if let Event::WindowResize = event {
-            println!("resize event thrown");
-            self.invalidated = true;
+        match event {
+            Event::WindowResize => {
+                self.size_invalidated = true;
+            }
+            Event::Char(' ') => {
+                self.cycle_layout();
+                self.layout_invalidated = true;
+                return EventResult::Consumed(None);
+            }
+            _ => (),
         }
+
         self.view.on_event(event)
     }
 
@@ -203,16 +289,18 @@ impl ViewWrapper for FullLayoutT<PaddedView<LinearLayout>> {
 
     fn wrap_layout(&mut self, size: Vec2) {
         self.resize(size);
-        self.invalidated = false;
+        self.relayout();
+        self.layout_invalidated = false;
+        self.size_invalidated = false;
         self.view.layout(size);
     }
 
     fn wrap_needs_relayout(&self) -> bool {
-        self.invalidated || self.view.needs_relayout()
+        self.layout_invalidated || self.size_invalidated || self.view.needs_relayout()
     }
 }
 
-impl FullLayout {
+impl LayoutView {
     pub fn new(
         lr_margin: usize,
         q_list: NamedView<ListView>,
@@ -221,80 +309,159 @@ impl FullLayout {
         a_view: NamedView<MdView>,
     ) -> NamedView<Self> {
         let view = LinearLayout::horizontal()
-            .child(
-                // TODO decide whats better, horizontal sizing on the outside,
-                // or keeping both sizings on the 4 internal views
-                LinearLayout::vertical().child(q_list).child(q_view),
-            )
+            .child(LinearLayout::vertical().child(q_list).child(q_view))
             .child(LinearLayout::vertical().child(a_list).child(a_view));
         let view = PaddedView::new(Margins::lrtb(lr_margin, lr_margin, 0, 0), view);
-        (FullLayoutT {
+        (LayoutView {
             view,
-            invalidated: true,
+            layout_invalidated: true,
+            size_invalidated: true,
+            layout: Layout::BothColumns, // TODO choose this based on initial width?
         })
         .with_name(NAME_FULL_LAYOUT)
     }
 
-    // public for now TODO remove
-    pub fn resize(&mut self, size: Vec2) {
-        let FullLayoutSizing {
+    fn get_constraints(&self, screen_size: Vec2) -> LayoutViewSizing {
+        let heuristic = 1;
+        let width = SizeConstraint::Fixed(screen_size.x / 2 - heuristic);
+        let list_height = SizeConstraint::AtMost(screen_size.y / 3);
+        let view_height = SizeConstraint::Full;
+
+        LayoutViewSizing {
+            width,
+            list_height,
+            view_height,
+        }
+    }
+
+    // TODO wtf is going on here
+    fn resize(&mut self, size: Vec2) {
+        let LayoutViewSizing {
             width,
             list_height,
             view_height,
         } = self.get_constraints(size);
-        self.view
-            .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
-                v.resize(width, list_height)
-            })
-            .expect("TODO");
-        self.view
-            .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
-                v.resize(width, list_height)
-            })
-            .expect("TODO");
-        self.view
-            .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
-                v.resize(width, view_height)
-            })
-            .expect("TODO");
-        self.view
-            .call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
-                v.resize(width, view_height)
-            })
-            .expect("TODO");
-        //.and_then(View::downcast_mut)
-        //.map(View::downcast_mut)
-        //.map(|v: &mut LinearLayout| {
-        //println!("downcast successful!");
-        //v.get_child_mut(0).and_then(View::downcast_mut).map(
-        //|v: &mut ResizedView<NamedView<ListView>>| {
-        //println!("LIST CONSTRAINTS SET");
-        //v.set_constraints(width, list_height);
-        //},
-        //);
-        //v.get_child_mut(1).and_then(View::downcast_mut).map(
-        //|v: &mut ResizedView<NamedView<ListView>>| {
-        //println!("VIEW CONSTRAINTS SET");
-        //v.set_constraints(width, list_height);
-        //},
-        //)
-        //});
+        self.call_on_list_views(move |v| v.resize(&width, &list_height));
+        self.call_on_md_views(move |v| v.resize(&width, &view_height));
     }
 
-    fn get_constraints(&self, screen_size: Vec2) -> FullLayoutSizing {
-        let heuristic = 1;
-        let width = SizeConstraint::Fixed(screen_size.x / 2 - heuristic);
-        let list_height = SizeConstraint::AtMost(screen_size.y / 3);
-        let view_height = SizeConstraint::Full; //AtLeast(2 * screen_size.y / 3);
-        println!(
-            "list constraints: {} x {}",
-            screen_size.x / 2 - heuristic,
-            screen_size.y / 3
-        );
-        FullLayoutSizing {
-            width,
-            list_height,
-            view_height,
+    fn relayout(&mut self) {
+        match self.layout {
+            Layout::BothColumns => {
+                self.call_on_list_views(|v| v.set_take_focus(false));
+                self.call_on_md_views(|v| v.set_take_focus(false));
+                self.call_on_list_views(|v| v.unhide());
+                self.call_on_md_views(|v| v.unhide());
+            }
+            // TODO see if call on column works
+            Layout::SingleColumn => {
+                self.call_on_list_views(|v| v.set_take_focus(true));
+                self.call_on_md_views(|v| {
+                    v.hide();
+                    v.set_width(&SizeConstraint::Full);
+                });
+                self.call_on_list_views(|v| {
+                    v.hide();
+                    v.set_width(&SizeConstraint::Full);
+                });
+                match self.get_focused_index().x {
+                    0 => {
+                        self.view
+                            .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
+                                v.unhide();
+                            });
+                        self.view
+                            .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
+                                v.unhide();
+                            });
+                    }
+                    _ => {
+                        self.view
+                            .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
+                                v.unhide();
+                            });
+                        self.view.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
+                            v.unhide();
+                        });
+                    }
+                };
+            }
+            Layout::FullScreen => {
+                self.call_on_md_views(|v| v.set_take_focus(true));
+                self.call_on_md_views(|v| {
+                    v.hide();
+                    v.resize(&SizeConstraint::Full, &SizeConstraint::Full);
+                });
+                self.call_on_list_views(|v| {
+                    v.hide();
+                    v.resize(&SizeConstraint::Full, &SizeConstraint::Full);
+                });
+                let name = Self::xy_to_name(self.get_focused_index());
+                if name == NAME_QUESTION_LIST || name == NAME_ANSWER_LIST {
+                    self.view.call_on_name(name, |v: &mut ListView| {
+                        v.unhide();
+                    });
+                } else {
+                    self.view.call_on_name(name, |v: &mut MdView| {
+                        v.unhide();
+                    });
+                }
+            }
+        }
+    }
+
+    fn cycle_layout(&mut self) {
+        self.layout = match self.layout {
+            Layout::BothColumns => Layout::SingleColumn,
+            Layout::SingleColumn => Layout::FullScreen,
+            Layout::FullScreen => Layout::BothColumns,
+        }
+    }
+
+    fn call_on_list_views<F>(&mut self, f: F) -> ()
+    where
+        F: Fn(&mut ListView) + 'static,
+    {
+        let f: Rc<dyn Fn(&mut ListView)> = Rc::new(move |v| f(v));
+        self.view
+            .call_on_name(NAME_QUESTION_LIST, &*f)
+            .expect("TODO: call on question list failed");
+        self.view
+            .call_on_name(NAME_ANSWER_LIST, &*f)
+            .expect("TODO: call on answer list failed");
+    }
+
+    fn call_on_md_views<F>(&mut self, f: F) -> ()
+    where
+        F: Fn(&mut MdView) + 'static,
+    {
+        let f: Rc<dyn Fn(&mut MdView)> = Rc::new(move |v| f(v));
+        self.view
+            .call_on_name(NAME_QUESTION_VIEW, &*f)
+            .expect("TODO: call on question view failed");
+        self.view
+            .call_on_name(NAME_ANSWER_VIEW, &*f)
+            .expect("TODO: call on answer view failed");
+    }
+
+    fn get_focused_index(&self) -> Vec2 {
+        let top = self.view.get_inner();
+        let x = top.get_focus_index();
+        let inner = top
+            .get_child(x)
+            .unwrap()
+            .downcast_ref::<LinearLayout>()
+            .unwrap();
+        let y = inner.get_focus_index();
+        XY { x, y }
+    }
+
+    fn xy_to_name(xy: Vec2) -> &'static str {
+        match xy {
+            XY { x: 0, y: 0 } => NAME_QUESTION_LIST,
+            XY { x: 0, y: 1 } => NAME_QUESTION_VIEW,
+            XY { x: 1, y: 0 } => NAME_ANSWER_LIST,
+            _ => NAME_ANSWER_VIEW,
         }
     }
 }
@@ -311,18 +478,4 @@ where
         .on_pre_event_inner('j', |s, _| {
             Some(EventResult::Consumed(Some(s.get_mut().select_down(1))))
         })
-}
-
-pub enum Layout {
-    BothColumns,
-    SingleColumn,
-    FullScreen,
-}
-
-pub enum Mode {
-    /// Akin to vim, keys are treated as commands
-    Normal,
-    /// Akin to vim, user is typing in bottom prompt
-    Insert,
-    // TODO if adding a search feature, that will be anther mode
 }

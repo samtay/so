@@ -24,6 +24,8 @@
 [ ] Add duckduckgo scraper
 
 ### at some point
+[ ] allow new queries from TUI, e.g. hit `/` for a prompt
+[ ] or `/` searches current q/a
 [ ] clean up error.rs and term.rs ; only keep whats actually ergonomic
 [ ] ask legal@stackoverflow.com for permission to logo stackoverflow/stackexchange in readme
 [ ] add duckduckgo logo to readme
