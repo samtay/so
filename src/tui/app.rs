@@ -16,47 +16,12 @@ use crate::config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
 
-// -----------------------------------------
-// |question title list|answer preview list| 1/3
-// -----------------------------------------
-// |question body      |answer body        | 2/3
-// -----------------------------------------
-// TODO <shift+HJKL> moves layout boundaries
-// TODO <hjkl> to move focus? at least for lists..
-// TODO <space> to cycle layout
-// TODO <?> to bring up key mappings
-// TODO query initial term size to choose initial layout
-
-// TODO Circular Focus handles layout & focus & stuff
-// TODO these might be "layers" ?
-
-// TODO make my own views for lists, md, etc, and use cursive::inner_getters!
-// (or at least type synonyms)
-// and abstract out the common builder funcs
-
-//pub struct App<'a> {
-//pub stackexchange: StackExchange,
-///// the questions matching the current query
-//pub question_list: StatefulList<Question>,
-///// the answers to a single question (i.e. the answer list currently shown)
-//pub answer_list: StatefulList<Answer>,
-//pub questions: Vec<Question>,
-//pub layout: Layout,
-//pub focus: Focus,
-//pub mode: Mode,
-//pub ratio: (u32, u32),
-//}
-
 // TODO maybe a struct like Tui::new(stackexchange) creates App::new and impls tui.run()?
 // TODO take async questions
 // TODO take the entire SE struct for future questions
 pub fn run(qs: Vec<Question>) -> Result<()> {
     let mut siv = cursive::default();
     siv.load_theme_file(config::theme_file_name()?).unwrap(); // TODO dont unwrap
-
-    //app state
-    //put this in siv.set_user_data? hmm
-    //TODO maybe this isn't necessary until multithreading
 
     let question_map: HashMap<u32, Question> = qs.clone().into_iter().map(|q| (q.id, q)).collect();
     let question_map = Arc::new(question_map);
@@ -77,7 +42,6 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
         move |s, qid| question_selected_callback(question_map.clone(), s, qid),
     );
 
-    // TODO init with qs[0].answers ?
     let answer_list_view = ListView::new(Name::AnswerList, move |s, aid| {
         let a = answer_map.get(aid).unwrap();
         s.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| v.set_content(&a.body));
@@ -104,7 +68,6 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     Ok(())
 }
 
-// TODO need to get size of question list view, as this will change depending on layout
 fn question_selected_callback(
     question_map: Arc<HashMap<u32, Question>>,
     mut s: &mut Cursive,
@@ -116,13 +79,13 @@ fn question_selected_callback(
     s.call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
         v.set_content(&q.body);
     })
-    .expect("TODO: make sure this is callable: setting question body on view");
+    .expect("Panic: setting question view content failed");
     // Update answer list view
     let cb = s
         .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
             v.reset_with_all(q.answers.iter().map(|a| (preview_answer(x, a), a.id)))
         })
-        .expect("TODO why would this ever fail");
+        .expect("Panic: setting answer list content failed");
     cb(&mut s)
 }
 

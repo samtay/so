@@ -165,7 +165,9 @@ impl ListView {
     where
         F: FnOnce(&mut SelectView<u32>) -> R,
     {
-        self.view.call_on_name(&self.inner_name, cb).expect("TODO")
+        self.view
+            .call_on_name(&self.inner_name, cb)
+            .expect("Panic: Call on select_view failed")
     }
 
     pub fn set_take_focus(&mut self, take: bool) {
@@ -354,7 +356,7 @@ impl LayoutView {
             view,
             layout_invalidated: true,
             size_invalidated: true,
-            layout: Layout::BothColumns, // TODO choose this based on initial width?
+            layout: Layout::BothColumns,
         })
         .with_name(NAME_FULL_LAYOUT)
     }
@@ -372,7 +374,6 @@ impl LayoutView {
         }
     }
 
-    // TODO wtf is going on here
     fn resize(&mut self, size: Vec2) {
         let LayoutViewSizing {
             width,
@@ -466,10 +467,10 @@ impl LayoutView {
         let f: Rc<dyn Fn(&mut ListView)> = Rc::new(move |v| f(v));
         self.view
             .call_on_name(NAME_QUESTION_LIST, &*f)
-            .expect("TODO: call on question list failed");
+            .expect("Panic: call on question list failed");
         self.view
             .call_on_name(NAME_ANSWER_LIST, &*f)
-            .expect("TODO: call on answer list failed");
+            .expect("Panic: call on answer list failed");
     }
 
     fn call_on_md_views<F>(&mut self, f: F) -> ()
@@ -479,10 +480,10 @@ impl LayoutView {
         let f: Rc<dyn Fn(&mut MdView)> = Rc::new(move |v| f(v));
         self.view
             .call_on_name(NAME_QUESTION_VIEW, &*f)
-            .expect("TODO: call on question view failed");
+            .expect("Panic: call on question view failed");
         self.view
             .call_on_name(NAME_ANSWER_VIEW, &*f)
-            .expect("TODO: call on answer view failed");
+            .expect("Panic: call on answer view failed");
     }
 
     fn get_focused_index(&self) -> Vec2 {
@@ -519,7 +520,6 @@ impl<T: View> ViewWrapper for VimBindingsView<T> {
     cursive::wrap_impl!(self.view: T);
 
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
-        // TODO add more
         match event {
             Event::Char('g') => {
                 if let Some(Event::Char('g')) = self.last_event {
@@ -527,6 +527,13 @@ impl<T: View> ViewWrapper for VimBindingsView<T> {
                     return self.view.on_event(Event::Key(Key::Home));
                 }
                 self.last_event = Some(Event::Char('g'));
+            }
+            Event::Char('Z') => {
+                if let Some(Event::Char('Z')) = self.last_event {
+                    self.last_event = None;
+                    return EventResult::with_cb(|s| s.quit());
+                }
+                self.last_event = Some(Event::Char('Z'));
             }
             _ => self.last_event = None,
         }
