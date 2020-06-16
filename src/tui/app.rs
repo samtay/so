@@ -9,8 +9,8 @@ use std::sync::Arc;
 
 use super::markdown;
 use super::views::{
-    LayoutView, ListView, MdView, Name, NAME_ANSWER_LIST, NAME_ANSWER_VIEW, NAME_QUESTION_LIST,
-    NAME_QUESTION_VIEW,
+    LayoutView, ListView, MdView, Name, Vimable, NAME_ANSWER_LIST, NAME_ANSWER_VIEW,
+    NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
 };
 use crate::config;
 use crate::error::Result;
@@ -83,13 +83,16 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
         s.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| v.set_content(&a.body));
     });
 
-    siv.add_layer(LayoutView::new(
-        1,
-        question_list_view,
-        question_view,
-        answer_list_view,
-        answer_view,
-    ));
+    siv.add_layer(
+        LayoutView::new(
+            1,
+            question_list_view,
+            question_view,
+            answer_list_view,
+            answer_view,
+        )
+        .add_vim_bindings(),
+    );
 
     let cb = siv.call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| v.select(0));
     if let Some(cb) = cb {

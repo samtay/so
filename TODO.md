@@ -11,9 +11,12 @@ changing [soon](https://meta.stackexchange.com/q/348746).
 #### Cursive interface for viewing questions and answers
 2. Handle focus with h,l
 5. Init with smaller layout if terminal size smaller?
-3. maybe cli --auto-resize option
+3. maybe cli `--auto-resize` option
 3. make the default colors.toml file have a banging RGB > Hex > Defaults fallback
 6. Small text at bottom with '?' to bring up key mapping dialog
+7. Clean up! remove dupe between ListView and MdView by making a common trait
+8. Possibly make `--arrow_keys_focus` option to toggle the arrow key consumption
+9. Maybe **ESC** cycles layout in the opposite direction?
 
 #### other
 1. Use [par_iter](https://github.com/rayon-rs/rayon) for text preprocess & parsing?

@@ -1,15 +1,16 @@
-use cursive::event::{Callback, Event, EventResult};
+use cursive::event::{Callback, Event, EventResult, Key};
 use cursive::traits::{Finder, Nameable, Resizable, Scrollable};
 use cursive::utils::markup::StyledString;
 use cursive::view::{Margins, SizeConstraint, View, ViewWrapper};
 use cursive::views::{
-    HideableView, LinearLayout, NamedView, OnEventView, PaddedView, Panel, ResizedView, ScrollView,
-    SelectView, TextView,
+    HideableView, LinearLayout, NamedView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
+    TextView,
 };
 use cursive::{Cursive, Vec2, XY};
 use std::fmt;
 use std::fmt::Display;
 use std::rc::Rc;
+use std::time;
 
 use super::markdown;
 use crate::error::Result;
@@ -19,6 +20,8 @@ pub const NAME_ANSWER_LIST: &str = "answer_list";
 pub const NAME_QUESTION_VIEW: &str = "question_view";
 pub const NAME_ANSWER_VIEW: &str = "answer_view";
 pub const NAME_FULL_LAYOUT: &str = "full_layout";
+// This is in std lib but currently unstable
+const SECOND: time::Duration = time::Duration::from_secs(1);
 
 // TODO might need resizable wrappers in types
 
@@ -70,11 +73,9 @@ trait Hide {
     }
 }
 
-// TODO maybe I should use cursive's ListView over SelectView ?
-// TODO copy one of them to allow overriding selected style => reverse video
-pub type ListView = ListViewT<
-    HideableView<ResizedView<Panel<ScrollView<OnEventView<NamedView<SelectView<u32>>>>>>>,
->;
+// TODO Copy select_view to to allow overriding selected style => reverse video
+pub type ListView =
+    ListViewT<HideableView<ResizedView<Panel<ScrollView<NamedView<SelectView<u32>>>>>>>;
 
 pub struct ListViewT<T: View> {
     inner_name: String,
@@ -85,8 +86,25 @@ pub struct ListViewT<T: View> {
 impl<T: View> ViewWrapper for ListViewT<T> {
     cursive::wrap_impl!(self.view: T);
 
+    // In full screen mode we always take focus, even though currently hidden
     fn wrap_take_focus(&mut self, source: cursive::direction::Direction) -> bool {
         self.force_take_focus || self.view.take_focus(source)
+    }
+
+    // Always take arrow keys, its jarring to have them move pane focus
+    fn wrap_on_event(&mut self, event: Event) -> EventResult {
+        let should_consume = match event {
+            Event::Key(Key::Right)
+            | Event::Key(Key::Left)
+            | Event::Key(Key::Down)
+            | Event::Key(Key::Up) => true,
+            _ => false,
+        };
+
+        match self.view.on_event(event) {
+            EventResult::Ignored if should_consume => EventResult::Consumed(None),
+            event_result => event_result,
+        }
     }
 }
 
@@ -119,7 +137,6 @@ impl ListView {
             view.add_all(items);
         }
         let view = view.with_name(&inner_name);
-        let view = add_vim_bindings(view);
         let view = view.scrollable();
         let view = Panel::new(view).title(format!("{}", name));
         let view = view.resized(SizeConstraint::Free, SizeConstraint::Free);
@@ -192,6 +209,22 @@ impl<T: View> ViewWrapper for MdViewT<T> {
 
     fn wrap_take_focus(&mut self, source: cursive::direction::Direction) -> bool {
         self.force_take_focus || self.view.take_focus(source)
+    }
+
+    // Always take arrow keys, its jarring to have them move pane focus
+    fn wrap_on_event(&mut self, event: Event) -> EventResult {
+        let should_consume = match event {
+            Event::Key(Key::Right)
+            | Event::Key(Key::Left)
+            | Event::Key(Key::Down)
+            | Event::Key(Key::Up) => true,
+            _ => false,
+        };
+
+        match self.view.on_event(event) {
+            EventResult::Ignored if should_consume => EventResult::Consumed(None),
+            event_result => event_result,
+        }
     }
 }
 
@@ -277,9 +310,6 @@ pub enum Layout {
 impl ViewWrapper for LayoutView {
     cursive::wrap_impl!(self.view: PaddedView<LinearLayout>);
 
-    // TODO what the actual fuck is wrong with this lifetime?
-    //  cursive does this shit all over the place...
-    // For now just issue a call_on_name like an asshat
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
         match event {
             Event::WindowResize => {
@@ -482,16 +512,73 @@ impl LayoutView {
     }
 }
 
-fn add_vim_bindings<T: 'static>(
-    view: NamedView<SelectView<T>>,
-) -> OnEventView<NamedView<SelectView<T>>>
-where
-{
-    OnEventView::new(view)
-        .on_pre_event_inner('k', |s, _| {
-            Some(EventResult::Consumed(Some(s.get_mut().select_up(1))))
-        })
-        .on_pre_event_inner('j', |s, _| {
-            Some(EventResult::Consumed(Some(s.get_mut().select_down(1))))
-        })
+/// Note that as it stands, this is very intrusive, and disallows the idea of
+/// having an inner EditView. If more nuance is needed later, then it will keep
+/// track of a `Mode = Insert | Command`
+pub struct VimBindingsView<T: View> {
+    last_event: Option<(Event, time::Instant)>, // TODO add time and check elapsed
+    view: T,
 }
+
+impl<T: View> ViewWrapper for VimBindingsView<T> {
+    cursive::wrap_impl!(self.view: T);
+
+    fn wrap_on_event(&mut self, event: Event) -> EventResult {
+        // TODO add more
+        match event {
+            Event::Char('g') => {
+                let now = time::Instant::now();
+                match self.last_event {
+                    Some((Event::Char('g'), then)) if now.duration_since(then) < SECOND => {
+                        self.last_event = None;
+                        return self.view.on_event(Event::Key(Key::Home));
+                    }
+                    _ => self.last_event = Some((Event::Char('g'), now)),
+                }
+            }
+            _ => self.last_event = None,
+        }
+        match event {
+            Event::Char('h') => {
+                return self.view.on_event(Event::Key(Key::Left));
+            }
+            Event::Char('j') => {
+                return self.view.on_event(Event::Key(Key::Down));
+            }
+            Event::Char('k') => {
+                return self.view.on_event(Event::Key(Key::Up));
+            }
+            Event::Char('l') => {
+                return self.view.on_event(Event::Key(Key::Right));
+            }
+            Event::CtrlChar('d') | Event::CtrlChar('f') => {
+                return self.view.on_event(Event::Key(Key::PageDown));
+            }
+            Event::CtrlChar('u') | Event::CtrlChar('b') => {
+                return self.view.on_event(Event::Key(Key::PageUp));
+            }
+            Event::Char('G') => {
+                return self.view.on_event(Event::Key(Key::End));
+            }
+            _ => (),
+        }
+        self.view.on_event(event)
+    }
+}
+
+impl<T: View> VimBindingsView<T> {
+    fn new(view: T) -> Self {
+        VimBindingsView {
+            view,
+            last_event: None,
+        }
+    }
+}
+
+pub trait Vimable: View + Sized {
+    fn add_vim_bindings(self) -> VimBindingsView<Self> {
+        VimBindingsView::new(self)
+    }
+}
+
+impl<T: View> Vimable for T {}
