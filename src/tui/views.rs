@@ -184,6 +184,7 @@ pub struct MdViewT<T: View> {
     /// If the LayoutView is in full screen mode, MdView should always accept
     /// focus.
     force_take_focus: bool,
+    title: String,
 }
 
 impl<T: View> ViewWrapper for MdViewT<T> {
@@ -205,6 +206,7 @@ impl MdView {
         let view = MdViewT {
             view,
             inner_name,
+            title: name.to_string(),
             force_take_focus: false,
         };
         view.with_name(name)
@@ -220,6 +222,17 @@ impl MdView {
                 tv.set_content(markdown::parse(content))
             })
             .expect("unwrap failed in MdView.set_content")
+    }
+
+    pub fn show_title(&mut self) {
+        self.view
+            .get_inner_mut()
+            .get_inner_mut()
+            .set_title(&self.title);
+    }
+
+    pub fn hide_title(&mut self) {
+        self.view.get_inner_mut().get_inner_mut().set_title("");
     }
 
     pub fn set_take_focus(&mut self, take: bool) {
@@ -348,14 +361,17 @@ impl LayoutView {
     fn relayout(&mut self) {
         match self.layout {
             Layout::BothColumns => {
-                self.call_on_list_views(|v| v.set_take_focus(false));
-                self.call_on_md_views(|v| v.set_take_focus(false));
-                self.call_on_list_views(|v| v.unhide());
-                self.call_on_md_views(|v| v.unhide());
+                self.call_on_list_views(|v| {
+                    v.set_take_focus(false);
+                    v.unhide();
+                });
+                self.call_on_md_views(|v| {
+                    v.set_take_focus(false);
+                    v.unhide();
+                    v.hide_title();
+                });
             }
-            // TODO see if call on column works
             Layout::SingleColumn => {
-                self.call_on_list_views(|v| v.set_take_focus(true));
                 self.call_on_md_views(|v| {
                     v.hide();
                     v.set_width(&SizeConstraint::Full);
@@ -363,32 +379,32 @@ impl LayoutView {
                 self.call_on_list_views(|v| {
                     v.hide();
                     v.set_width(&SizeConstraint::Full);
+                    v.set_take_focus(true);
                 });
-                match self.get_focused_index().x {
-                    0 => {
-                        self.view
-                            .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
-                                v.unhide();
-                            });
-                        self.view
-                            .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
-                                v.unhide();
-                            });
-                    }
-                    _ => {
-                        self.view
-                            .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
-                                v.unhide();
-                            });
-                        self.view.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
+                let name = Self::xy_to_name(self.get_focused_index());
+                if name == NAME_QUESTION_LIST || name == NAME_QUESTION_VIEW {
+                    self.view
+                        .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
                             v.unhide();
                         });
-                    }
-                };
+                    self.view
+                        .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
+                            v.unhide();
+                        });
+                } else {
+                    self.view
+                        .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
+                            v.unhide();
+                        });
+                    self.view.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
+                        v.unhide();
+                    });
+                }
             }
             Layout::FullScreen => {
-                self.call_on_md_views(|v| v.set_take_focus(true));
                 self.call_on_md_views(|v| {
+                    v.show_title();
+                    v.set_take_focus(true);
                     v.hide();
                     v.resize(&SizeConstraint::Full, &SizeConstraint::Full);
                 });
