@@ -10,7 +10,6 @@ use cursive::{Cursive, Vec2, XY};
 use std::fmt;
 use std::fmt::Display;
 use std::rc::Rc;
-use std::time;
 
 use super::markdown;
 use crate::error::Result;
@@ -20,10 +19,6 @@ pub const NAME_ANSWER_LIST: &str = "answer_list";
 pub const NAME_QUESTION_VIEW: &str = "question_view";
 pub const NAME_ANSWER_VIEW: &str = "answer_view";
 pub const NAME_FULL_LAYOUT: &str = "full_layout";
-// This is in std lib but currently unstable
-const SECOND: time::Duration = time::Duration::from_secs(1);
-
-// TODO might need resizable wrappers in types
 
 pub enum Name {
     QuestionList,
@@ -516,7 +511,7 @@ impl LayoutView {
 /// having an inner EditView. If more nuance is needed later, then it will keep
 /// track of a `Mode = Insert | Command`
 pub struct VimBindingsView<T: View> {
-    last_event: Option<(Event, time::Instant)>, // TODO add time and check elapsed
+    last_event: Option<Event>,
     view: T,
 }
 
@@ -527,14 +522,11 @@ impl<T: View> ViewWrapper for VimBindingsView<T> {
         // TODO add more
         match event {
             Event::Char('g') => {
-                let now = time::Instant::now();
-                match self.last_event {
-                    Some((Event::Char('g'), then)) if now.duration_since(then) < SECOND => {
-                        self.last_event = None;
-                        return self.view.on_event(Event::Key(Key::Home));
-                    }
-                    _ => self.last_event = Some((Event::Char('g'), now)),
+                if let Some(Event::Char('g')) = self.last_event {
+                    self.last_event = None;
+                    return self.view.on_event(Event::Key(Key::Home));
                 }
+                self.last_event = Some(Event::Char('g'));
             }
             _ => self.last_event = None,
         }
