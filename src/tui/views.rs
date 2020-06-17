@@ -460,7 +460,7 @@ impl LayoutView {
         }
     }
 
-    fn call_on_list_views<F>(&mut self, f: F) -> ()
+    fn call_on_list_views<F>(&mut self, f: F)
     where
         F: Fn(&mut ListView) + 'static,
     {
@@ -473,7 +473,7 @@ impl LayoutView {
             .expect("Panic: call on answer list failed");
     }
 
-    fn call_on_md_views<F>(&mut self, f: F) -> ()
+    fn call_on_md_views<F>(&mut self, f: F)
     where
         F: Fn(&mut MdView) + 'static,
     {

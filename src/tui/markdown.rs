@@ -61,12 +61,11 @@ where
 fn preprocess(input: String) -> String {
     // TODO handle other stackexchange oddities here ENTITIES
     // TODO then benchmark
-    let input = input
+    input
         .as_str()
         .trim()
         .replace("<kbd>", "**[")
-        .replace("</kbd>", "]**");
-    input
+        .replace("</kbd>", "]**")
 }
 
 /// Parse the given markdown text into a list of spans.

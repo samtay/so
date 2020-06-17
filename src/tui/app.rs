@@ -1,5 +1,5 @@
 use cursive::event::Event;
-use cursive::theme::{BaseColor, Color, ColorStyle, Effect, Style};
+use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
 use cursive::Cursive;
@@ -40,7 +40,7 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     let question_list_view = ListView::new_with_items(
         Name::QuestionList,
         qs.into_iter().map(|q| (preview_question(&q), q.id)),
-        move |s, qid| question_selected_callback(question_map.clone(), s, qid),
+        move |s, qid| question_selected_callback(question_map.clone(), s, *qid),
     );
 
     let answer_list_view = ListView::new(Name::AnswerList, move |s, aid| {
@@ -76,9 +76,9 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
 fn question_selected_callback(
     question_map: Arc<HashMap<u32, Question>>,
     mut s: &mut Cursive,
-    qid: &u32,
+    qid: u32,
 ) {
-    let q = question_map.get(qid).unwrap();
+    let q = question_map.get(&qid).unwrap();
     let XY { x, y: _y } = s.screen_size();
     // Update question view
     s.call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
