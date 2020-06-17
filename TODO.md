@@ -17,6 +17,9 @@ changing [soon](https://meta.stackexchange.com/q/348746).
 8. Possibly make `--arrow_keys_focus` option to toggle the arrow key consumption
 9. Maybe **ESC** cycles layout in the opposite direction? And stops at
    BothColumns?
+10. Allow cycling through `~/.config/so/colors/*.toml` themes (or just hardcoded
+    themes in `tui::themes`) with keybinding
+11. Small tray at the bottom with "notifications", e.g. "GitHub Theme loaded!"
 
 #### other
 1. Use [par_iter](https://github.com/rayon-rs/rayon) for text preprocess & parsing?

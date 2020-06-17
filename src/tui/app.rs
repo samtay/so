@@ -1,4 +1,5 @@
-use cursive::theme::{BaseColor, Color, Effect, Style};
+use cursive::event::Event;
+use cursive::theme::{BaseColor, Color, ColorStyle, Effect, Style};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
 use cursive::Cursive;
@@ -64,6 +65,10 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
     }
     cursive::logger::init();
     siv.add_global_callback('?', cursive::Cursive::toggle_debug_console);
+    siv.add_global_callback(Event::CtrlChar('r'), |s| {
+        s.load_theme_file(config::theme_file_name().unwrap())
+            .unwrap()
+    });
     siv.run();
     Ok(())
 }
