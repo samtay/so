@@ -1,0 +1,14 @@
+shadow = false
+borders = "outset"
+
+[colors]
+shadow     = []
+background = "#2d2d2d"
+view       = "#2d2d2d"
+primary    = "#cccccc"
+secondary  = ["#66cccc", "cyan"]
+tertiary   = ["#99cc99", "green"]
+title_primary   = ["#f2777a", "red"]
+title_secondary = ["#cc99cc", "magenta"]
+highlight          = ["#ffcc66", "yellow"]
+highlight_inactive = "515151"
