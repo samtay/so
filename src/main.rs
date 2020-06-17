@@ -24,6 +24,7 @@ fn main() {
         let opts = cli::get_opts()?;
         let config = opts.config;
         let site = &config.site;
+        let lucky = config.lucky;
         let mut ls = LocalStorage::new()?;
 
         if let Some(key) = opts.set_api_key {
@@ -65,10 +66,19 @@ fn main() {
 
         if let Some(q) = opts.query {
             let se = StackExchange::new(config);
-            //TODO async
+            // TODO get the rest of the results in the background
+            if lucky {
+                // TODO this needs preprocessing; all the more reason to do it at SE level
+                let md = se.search_lucky(&q)?;
+                skin.print_text(&md);
+                skin.print_text(
+                    "\nPress **[SPACE]** to see more results, or any other key to exit",
+                );
+                if !utils::wait_for_char(' ')? {
+                    return Ok(());
+                }
+            }
             let qs = se.search(&q)?;
-            //TODO do the print_text below for --lucky with option to continue
-            //skin.print_text(&md);
             tui::run(qs)?;
         }
         Ok(())

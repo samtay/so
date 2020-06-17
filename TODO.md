@@ -6,13 +6,6 @@ Going with cursive because it is way more flexible than tui-rs.
 benefit of incorporating termimad features will not be felt. But, this is
 changing [soon](https://meta.stackexchange.com/q/348746).
 
-### v0.2.1
-1. Add `lucky: bool` to config, but
-2. add --lucky and --no-lucky conflicting flags to cli
-3. If --lucky, async get 1 result while getting limit results
-4. Display with [space] to see more, any other key to exit.
-1. maybe <query> is optional, and leaving blank starts up TUI?
-
 ### v0.2.2
 1. Site can be multiple
 2. do tokio async on SE api
@@ -32,6 +25,8 @@ etc.
    is prime for parallelization.
 2. Also, we could `par_iter` the initial q&a data to SpannedStrings from the
    start, so that it's not done on the fly...
+3. The rest of the questions should really start being fetched while waiting for
+   the user to press [Enter]... maybe start with just simple threads?
 
 ### Endless future improvements for the TUI
 1. Init with smaller layout depending on initial screen size.

@@ -81,11 +81,32 @@ impl StackExchange {
         StackExchange { client, config }
     }
 
+    // TODO also return a future with the rest of the questions
+    /// Search query at stack exchange and get the top answer body
+    pub fn search_lucky(&self, q: &str) -> Result<String> {
+        let ans = self
+            .search_advanced(q, 1)?
+            .into_iter()
+            .next()
+            .ok_or(Error::NoResults)?
+            .answers
+            .into_iter()
+            .next()
+            .ok_or_else(|| {
+                Error::StackExchange(String::from("Received question with no answers"))
+            })?;
+        Ok(ans.body)
+    }
+
+    /// Search query at stack exchange and get a list of relevant questions
+    pub fn search(&self, q: &str) -> Result<Vec<Question>> {
+        self.search_advanced(q, self.config.limit)
+    }
     /// Search against the search/advanced endpoint with a given query.
     /// Only fetches questions that have at least one answer.
     /// TODO async
     /// TODO parallel requests over multiple sites
-    pub fn search(&self, q: &str) -> Result<Vec<Question>> {
+    fn search_advanced(&self, q: &str, limit: u16) -> Result<Vec<Question>> {
         let resp_body = self
             .client
             .get(stackexchange_url("search/advanced"))
@@ -93,7 +114,7 @@ impl StackExchange {
             .query(&self.get_default_opts())
             .query(&[
                 ("q", q),
-                ("pagesize", &self.config.limit.to_string()),
+                ("pagesize", &limit.to_string()),
                 ("page", "1"),
                 ("answers", "1"),
                 ("order", "desc"),
@@ -141,7 +162,7 @@ impl LocalStorage {
         })
     }
 
-    // TODO make this async, inform user if we are downloading
+    // TODO inform user if we are downloading
     pub fn sites(&mut self) -> Result<&Vec<Site>> {
         // Stop once Option ~ Some or Result ~ Err
         if self.sites.is_none() && !self.fetch_local_sites()? {
@@ -177,7 +198,6 @@ impl LocalStorage {
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
-    // TODO cool loading animation?
     fn fetch_remote_sites(&mut self) -> Result<()> {
         let resp_body = Client::new()
             .get(stackexchange_url("sites"))

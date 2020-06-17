@@ -57,14 +57,18 @@ pub fn get_opts() -> Result<Opts> {
                 .takes_value(true)
                 .default_value(limit)
                 .validator(|s| s.parse::<u32>().map_err(|e| e.to_string()).map(|_| ()))
-                .help("Question limit per site query")
-                .hidden(true), // TODO unhide once more than just --lucky
+                .help("Question limit per site query"),
         )
         .arg(
             Arg::with_name("lucky")
                 .long("lucky")
-                .help("Print the top-voted answer of the most relevant question")
-                .hidden(true), // TODO unhide
+                .help("Print the top-voted answer of the most relevant question"),
+        )
+        .arg(
+            Arg::with_name("no-lucky")
+                .long("no-lucky")
+                .help("Disable lucky")
+                .conflicts_with("lucky"),
         )
         .arg(
             Arg::with_name("query")
@@ -73,7 +77,11 @@ pub fn get_opts() -> Result<Opts> {
                 .required_unless_one(&["list-sites", "update-sites", "set-api-key"]),
         )
         .get_matches();
-
+    let lucky = match (matches.is_present("lucky"), matches.is_present("no-lucky")) {
+        (true, _) => true,
+        (_, true) => false,
+        _ => config.lucky,
+    };
     Ok(Opts {
         list_sites: matches.is_present("list-sites"),
         update_sites: matches.is_present("update-sites"),
@@ -89,8 +97,10 @@ pub fn get_opts() -> Result<Opts> {
                 .value_of("set-api-key")
                 .map(String::from)
                 .or(config.api_key),
+            lucky,
         },
     })
 }
 
 // TODO how can I test this App given https://users.rust-lang.org/t/help-with-idiomatic-rust-and-ownership-semantics/43880
+// Maybe pass get_opts a closure that produces the Config...

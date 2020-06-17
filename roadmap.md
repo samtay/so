@@ -24,6 +24,7 @@
 [ ] Add duckduckgo scraper
 
 ### at some point
+[ ] ask SE forums if I should bundle my api-key?
 [ ] allow new queries from TUI, e.g. hit `/` for a prompt
 [ ] or `/` searches current q/a
 [ ] clean up error.rs and term.rs ; only keep whats actually ergonomic

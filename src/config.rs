@@ -11,6 +11,7 @@ use crate::utils;
 pub struct Config {
     pub api_key: Option<String>,
     pub limit: u16,
+    pub lucky: bool,
     pub site: String,
 }
 
@@ -20,6 +21,7 @@ impl Default for Config {
         Config {
             api_key: None,
             limit: 20,
+            lucky: true,
             site: String::from("stackoverflow"),
         }
     }
