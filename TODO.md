@@ -6,24 +6,6 @@ Going with cursive because it is way more flexible than tui-rs.
 benefit of incorporating termimad features will not be felt. But, this is
 changing [soon](https://meta.stackexchange.com/q/348746).
 
-### v0.2.0
-
-#### Cursive interface for viewing questions and answers
-5. Init with smaller layout if terminal size smaller?
-3. maybe cli `--auto-resize` option
-3. make the default colors.toml file have a banging RGB > Hex > Defaults fallback
-6. Small text at bottom with '?' to bring up key mapping dialog
-7. Clean up! remove dupe between ListView and MdView by making a common trait
-8. Possibly make `--arrow_keys_focus` option to toggle the arrow key consumption
-9. Maybe **ESC** cycles layout in the opposite direction? And stops at
-   BothColumns?
-10. Allow cycling through `~/.config/so/colors/*.toml` themes (or just hardcoded
-    themes in `tui::themes`) with keybinding
-11. Small tray at the bottom with "notifications", e.g. "GitHub Theme loaded!"
-
-#### other
-1. Use [par_iter](https://github.com/rayon-rs/rayon) for text preprocess & parsing?
-
 ### v0.2.1
 1. Add `lucky: bool` to config, but
 2. add --lucky and --no-lucky conflicting flags to cli
@@ -42,6 +24,25 @@ changing [soon](https://meta.stackexchange.com/q/348746).
 (site:stackoverflow.com OR site:unix.stackexchange.com) what is linux
 ```
 etc.
+
+#### Tech debt and low hanging fruit
+1. Use [`par_iter`](https://github.com/rayon-rs/rayon) for text preprocess &
+   parsing. In particular the `tui::markdown::preprocess` function should just
+   get called on all markdown as soon as its received from stack exchange; this
+   is prime for parallelization.
+2. Also, we could `par_iter` the initial q&a data to SpannedStrings from the
+   start, so that it's not done on the fly...
+
+### Endless future improvements for the TUI
+1. Init with smaller layout depending on initial screen size.
+2. Maybe cli `--auto-resize` option.
+3. Small text at bottom with '?' to bring up key mapping dialog
+4. Clean up! remove dupe between ListView and MdView by making a common trait
+5. Maybe **[ESC]** cycles layout in the opposite direction? And stops at
+   BothColumns?
+6. Allow cycling through themes, either found in `~/.config/so/colors/*.toml`
+    or just hardcoded ones.
+7. Small tray at the bottom with "notifications", e.g. "GitHub Theme loaded!"
 
 ### resources for later
 0. [Intro to async rust](http://jamesmcm.github.io/blog/2020/05/06/a-practical-introduction-to-async-programming-in-rust/)

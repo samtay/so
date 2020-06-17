@@ -11,7 +11,7 @@
 [x] Finishing touches on cli opts like --set-api-key, etc.
 
 ### v0.2.0
-[ ] Termimad interface for viewing multiple results
+[x] Termimad interface for viewing multiple results
 
 ### v0.2.1
 [ ] Add --no-lucky option
