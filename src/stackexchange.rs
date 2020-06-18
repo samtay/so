@@ -27,11 +27,12 @@ const SE_SITES_PAGESIZE: u16 = 10000;
 pub struct StackExchange {
     client: Client,
     config: Config,
+    query: String,
 }
 
 /// This structure allows interacting with locally cached StackExchange metadata.
 pub struct LocalStorage {
-    sites: Option<Vec<Site>>,
+    sites: Option<Vec<Site>>, // TODO this should be a hashmap!
     filename: PathBuf,
 }
 
@@ -75,16 +76,20 @@ struct ResponseWrapper<T> {
 }
 
 impl StackExchange {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, query: String) -> Self {
         let client = Client::new();
-        StackExchange { client, config }
+        StackExchange {
+            client,
+            config,
+            query,
+        }
     }
 
     // TODO also return a future with the rest of the questions
     /// Search query at stack exchange and get the top answer body
-    pub async fn search_lucky(&self, q: &str) -> Result<String> {
-        let ans = self
-            .search_advanced(q, 1)
+    pub async fn search_lucky(&self) -> Result<String> {
+        Ok(self
+            .search_advanced(1)
             .await?
             .into_iter()
             .next()
@@ -92,28 +97,27 @@ impl StackExchange {
             .answers
             .into_iter()
             .next()
-            .ok_or_else(|| {
-                Error::StackExchange(String::from("Received question with no answers"))
-            })?;
-        Ok(ans.body)
+            .ok_or_else(|| Error::StackExchange(String::from("Received question with no answers")))?
+            .body)
     }
 
     /// Search query at stack exchange and get a list of relevant questions
-    pub async fn search(&self, q: &str) -> Result<Vec<Question>> {
-        self.search_advanced(q, self.config.limit).await
+    pub async fn search(&self) -> Result<Vec<Question>> {
+        self.search_advanced(self.config.limit).await
     }
+
     /// Search against the search/advanced endpoint with a given query.
     /// Only fetches questions that have at least one answer.
     /// TODO async
     /// TODO parallel requests over multiple sites
-    async fn search_advanced(&self, q: &str, limit: u16) -> Result<Vec<Question>> {
+    async fn search_advanced(&self, limit: u16) -> Result<Vec<Question>> {
         Ok(self
             .client
             .get(stackexchange_url("search/advanced"))
             .header("Accepts", "application/json")
             .query(&self.get_default_opts())
             .query(&[
-                ("q", q),
+                ("q", self.query.as_str()),
                 ("pagesize", &limit.to_string()),
                 ("page", "1"),
                 ("answers", "1"),

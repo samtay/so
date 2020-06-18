@@ -7,12 +7,13 @@ mod tui;
 mod utils;
 
 use crossterm::style::Color;
-use error::Error;
+use error::{Error, Result};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
 use term::mk_print_error;
 use termimad::{CompoundStyle, MadSkin};
+use tokio::task;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -77,19 +78,21 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
     }
 
     if let Some(q) = opts.query {
-        let se = StackExchange::new(config);
-        // TODO get the rest of the results in the background
+        let se = StackExchange::new(config, q);
         if lucky {
             // TODO this needs preprocessing; all the more reason to do it at SE level
-            let md = se.search_lucky(&q).await?;
+            let md = se.search_lucky().await?;
             skin.print_text(&md);
             skin.print_text("\nPress **[SPACE]** to see more results, or any other key to exit");
+            // Kick off the rest of the search in the background
+            let qs = task::spawn(async move { se.search().await });
             if !utils::wait_for_char(' ')? {
                 return Ok(());
             }
+            tui::run(qs.await.unwrap()?)?;
+        } else {
+            tui::run(se.search().await?)?;
         }
-        let qs = se.search(&q).await?;
-        tui::run(qs)?;
     }
     Ok(())
 }

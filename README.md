@@ -2,6 +2,17 @@
 
 **Note:** under development, not ready for prime time.
 
+### async considerations
+Implemented async with tokio in ec92f93, but unclear if this is necessary. For
+< 10 simultaneous network requests, it might be better and simpler to just use
+rayon (i.e. OS threads).
+
+### TUI considerations
+Going with cursive because it is way more flexible than tui-rs.
+**Important note** Tables are not currently allowed in stackexchange... so the
+benefit of incorporating termimad features will not be felt. But, this is
+changing [soon](https://meta.stackexchange.com/q/348746).
+
 ### to troubleshoot
 ```
 export RUST_BACKTRACE=full

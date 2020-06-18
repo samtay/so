@@ -14,8 +14,8 @@
 [x] Termimad interface for viewing multiple results
 
 ### v0.2.1
-[ ] Add --no-lucky option
-[ ] For --lucky, async parsing first q/a, then the rest
+[x] Add --no-lucky option
+[x] For --lucky, async parsing first q/a, then the rest
 
 ### v0.2.2
 [ ] Support multiple --site args & searches
@@ -24,12 +24,12 @@
 [ ] Add duckduckgo scraper
 
 ### at some point
-[ ] ask SE forums if I should bundle my api-key?
+[ ] use trust to distrubute app binaries
+[ ] ask SE forums if I should bundle my api-key? (if so use an env var macro)
 [ ] allow new queries from TUI, e.g. hit `/` for a prompt
 [ ] or `/` searches current q/a
 [ ] clean up error.rs and term.rs ; only keep whats actually ergonomic
 [ ] ask legal@stackoverflow.com for permission to logo stackoverflow/stackexchange in readme
 [ ] add duckduckgo logo to readme
-[ ] cross-platform release binaries
 [ ] per platform package mgmt
-[ ] testing
+[ ] more testing
