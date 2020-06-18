@@ -1,5 +1,4 @@
-use flate2::read::GzDecoder;
-use reqwest::blocking::Client;
+use reqwest::Client;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -83,9 +82,10 @@ impl StackExchange {
 
     // TODO also return a future with the rest of the questions
     /// Search query at stack exchange and get the top answer body
-    pub fn search_lucky(&self, q: &str) -> Result<String> {
+    pub async fn search_lucky(&self, q: &str) -> Result<String> {
         let ans = self
-            .search_advanced(q, 1)?
+            .search_advanced(q, 1)
+            .await?
             .into_iter()
             .next()
             .ok_or(Error::NoResults)?
@@ -99,15 +99,15 @@ impl StackExchange {
     }
 
     /// Search query at stack exchange and get a list of relevant questions
-    pub fn search(&self, q: &str) -> Result<Vec<Question>> {
-        self.search_advanced(q, self.config.limit)
+    pub async fn search(&self, q: &str) -> Result<Vec<Question>> {
+        self.search_advanced(q, self.config.limit).await
     }
     /// Search against the search/advanced endpoint with a given query.
     /// Only fetches questions that have at least one answer.
     /// TODO async
     /// TODO parallel requests over multiple sites
-    fn search_advanced(&self, q: &str, limit: u16) -> Result<Vec<Question>> {
-        let resp_body = self
+    async fn search_advanced(&self, q: &str, limit: u16) -> Result<Vec<Question>> {
+        Ok(self
             .client
             .get(stackexchange_url("search/advanced"))
             .header("Accepts", "application/json")
@@ -120,24 +120,18 @@ impl StackExchange {
                 ("order", "desc"),
                 ("sort", "relevance"),
             ])
-            .send()?;
-
-        let gz = GzDecoder::new(resp_body);
-        let wrapper: ResponseWrapper<Question> = serde_json::from_reader(gz).map_err(|e| {
-            Error::StackExchange(format!(
-                "Error decoding questions from the StackExchange API: {}",
-                e
-            ))
-        })?;
-        let qs = wrapper
+            .send()
+            .await?
+            .json::<ResponseWrapper<Question>>()
+            .await?
             .items
             .into_iter()
             .map(|mut q| {
+                // TODO parallelize this (and preprocess <kbd> stuff too)
                 q.answers.sort_unstable_by_key(|a| -a.score);
                 q
             })
-            .collect();
-        Ok(qs)
+            .collect())
     }
 
     fn get_default_opts(&self) -> HashMap<&str, &str> {
@@ -163,10 +157,10 @@ impl LocalStorage {
     }
 
     // TODO inform user if we are downloading
-    pub fn sites(&mut self) -> Result<&Vec<Site>> {
+    pub async fn sites(&mut self) -> Result<&Vec<Site>> {
         // Stop once Option ~ Some or Result ~ Err
         if self.sites.is_none() && !self.fetch_local_sites()? {
-            self.fetch_remote_sites()?;
+            self.fetch_remote_sites().await?;
         }
         match &self.sites {
             Some(sites) if sites.is_empty() => Err(Error::EmptySites),
@@ -175,13 +169,14 @@ impl LocalStorage {
         }
     }
 
-    pub fn update_sites(&mut self) -> Result<()> {
-        self.fetch_remote_sites()
+    pub async fn update_sites(&mut self) -> Result<()> {
+        self.fetch_remote_sites().await
     }
 
-    pub fn validate_site(&mut self, site_code: &str) -> Result<bool> {
+    pub async fn validate_site(&mut self, site_code: &str) -> Result<bool> {
         Ok(self
-            .sites()?
+            .sites()
+            .await?
             .iter()
             .any(|site| site.api_site_parameter == *site_code))
     }
@@ -198,23 +193,21 @@ impl LocalStorage {
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
-    fn fetch_remote_sites(&mut self) -> Result<()> {
-        let resp_body = Client::new()
-            .get(stackexchange_url("sites"))
-            .header("Accepts", "application/json")
-            .query(&[
-                ("pagesize", SE_SITES_PAGESIZE.to_string()),
-                ("page", "1".to_string()),
-            ])
-            .send()?;
-        let gz = GzDecoder::new(resp_body);
-        let wrapper: ResponseWrapper<Site> = serde_json::from_reader(gz).map_err(|e| {
-            Error::StackExchange(format!(
-                "Error decoding sites from the StackExchange API: {}",
-                e
-            ))
-        })?;
-        self.sites = Some(wrapper.items);
+    async fn fetch_remote_sites(&mut self) -> Result<()> {
+        self.sites = Some(
+            Client::new()
+                .get(stackexchange_url("sites"))
+                .header("Accepts", "application/json")
+                .query(&[
+                    ("pagesize", SE_SITES_PAGESIZE.to_string()),
+                    ("page", "1".to_string()),
+                ])
+                .send()
+                .await?
+                .json::<ResponseWrapper<Site>>()
+                .await?
+                .items,
+        );
         self.store_local_sites()
     }
 
