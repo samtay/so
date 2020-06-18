@@ -1,10 +1,5 @@
 # TODO
 
-### v0.2.2
-1. Site can be multiple
-2. do tokio async on SE api
-3. add warning to README about throttling on excessive requests
-
 ### v0.3.0
 1. Duckduck go search ftw, e.g.
 ```

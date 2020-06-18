@@ -18,7 +18,7 @@
 [x] For --lucky, async parsing first q/a, then the rest
 
 ### v0.2.2
-[ ] Support multiple --site args & searches
+[x] Support multiple --site args & searches
 
 ### v0.3.0
 [ ] Add duckduckgo scraper

@@ -13,6 +13,12 @@ Going with cursive because it is way more flexible than tui-rs.
 benefit of incorporating termimad features will not be felt. But, this is
 changing [soon](https://meta.stackexchange.com/q/348746).
 
+### to stress test
+Produces a long answer with noticeable pause on markdown view:
+```
+cargo run -- --site stackoverflow --site serverfault how do I exit Vim
+```
+
 ### to troubleshoot
 ```
 export RUST_BACKTRACE=full
@@ -29,5 +35,14 @@ run into throttling issues, get a key
 so --set-api-key <KEY>
 ```
 
-Recall my api key is: `8o9g7WcfwnwbB*Qp4VsGsw((`
+### multi-site searching
+As stated in the docs linked above,
 
+> If a single IP is making more than 30 requests a second, new requests will be dropped.
+
+So, don't go crazy with the multi-site search, since it is all done in parallel.
+In particular, if you specify more than 30 sites, SE will likely ban you for a short time.
+
+
+
+**Remove this** Recall my api key is: `8o9g7WcfwnwbB*Qp4VsGsw((`

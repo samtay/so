@@ -116,7 +116,7 @@ impl StackExchange {
 
     /// Parallel searches against the search/advanced endpoint across all configured sites
     async fn search_advanced(&self, limit: u16) -> Result<Vec<Question>> {
-        let results = futures::stream::iter(self.config.sites.clone())
+        futures::stream::iter(self.config.sites.clone())
             .map(|site| {
                 let clone = self.clone();
                 tokio::spawn(async move {
@@ -126,12 +126,17 @@ impl StackExchange {
             })
             .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
             .collect::<Vec<_>>()
-            .await;
-        results
+            .await
             .into_iter()
             .map(|r| r.map_err(Error::from).and_then(|x| x))
             .collect::<Result<Vec<Vec<_>>>>()
-            .map(|v| v.into_iter().flatten().collect())
+            .map(|v| {
+                let mut all_qs: Vec<Question> = v.into_iter().flatten().collect();
+                if self.config.sites.len() > 1 {
+                    all_qs.sort_unstable_by_key(|q| -q.score);
+                }
+                all_qs
+            })
     }
 
     /// Search against the site's search/advanced endpoint with a given query.
