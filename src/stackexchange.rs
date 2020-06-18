@@ -1,3 +1,4 @@
+use futures::stream::StreamExt;
 use reqwest::Client;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -21,9 +22,13 @@ const SE_FILTER: &str = ".DND5X2VHHUH8HyJzpjo)5NvdHI3w6auG";
 /// Pagesize when fetching all SE sites. Should be good for many years...
 const SE_SITES_PAGESIZE: u16 = 10000;
 
+/// Limit on concurrent requests (gets passed to `buffer_unordered`)
+const CONCURRENT_REQUESTS_LIMIT: usize = 8;
+
 /// This structure allows interacting with parts of the StackExchange
 /// API, using the `Config` struct to determine certain API settings and options.
 // TODO should my se structs have &str instead of String?
+#[derive(Clone)]
 pub struct StackExchange {
     client: Client,
     config: Config,
@@ -32,7 +37,7 @@ pub struct StackExchange {
 
 /// This structure allows interacting with locally cached StackExchange metadata.
 pub struct LocalStorage {
-    sites: Option<Vec<Site>>, // TODO this should be a hashmap!
+    sites: Option<Vec<Site>>,
     filename: PathBuf,
 }
 
@@ -85,7 +90,6 @@ impl StackExchange {
         }
     }
 
-    // TODO also return a future with the rest of the questions
     /// Search query at stack exchange and get the top answer body
     pub async fn search_lucky(&self) -> Result<String> {
         Ok(self
@@ -106,11 +110,29 @@ impl StackExchange {
         self.search_advanced(self.config.limit).await
     }
 
-    /// Search against the search/advanced endpoint with a given query.
-    /// Only fetches questions that have at least one answer.
-    /// TODO async
-    /// TODO parallel requests over multiple sites
+    /// Parallel searches against the search/advanced endpoint across all configured sites
     async fn search_advanced(&self, limit: u16) -> Result<Vec<Question>> {
+        let results = futures::stream::iter(self.config.sites.clone())
+            .map(|site| {
+                let clone = self.clone();
+                tokio::spawn(async move {
+                    let clone = &clone;
+                    clone.search_advanced_site(&site, limit).await
+                })
+            })
+            .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
+            .collect::<Vec<_>>()
+            .await;
+        results
+            .into_iter()
+            .map(|r| r.map_err(Error::from).and_then(|x| x))
+            .collect::<Result<Vec<Vec<_>>>>()
+            .map(|v| v.into_iter().flatten().collect())
+    }
+
+    /// Search against the site's search/advanced endpoint with a given query.
+    /// Only fetches questions that have at least one answer.
+    async fn search_advanced_site(&self, site: &str, limit: u16) -> Result<Vec<Question>> {
         Ok(self
             .client
             .get(stackexchange_url("search/advanced"))
@@ -119,6 +141,7 @@ impl StackExchange {
             .query(&[
                 ("q", self.query.as_str()),
                 ("pagesize", &limit.to_string()),
+                ("site", site),
                 ("page", "1"),
                 ("answers", "1"),
                 ("order", "desc"),
@@ -140,10 +163,9 @@ impl StackExchange {
 
     fn get_default_opts(&self) -> HashMap<&str, &str> {
         let mut params = HashMap::new();
-        params.insert("site", self.config.site.as_str());
-        params.insert("filter", &SE_FILTER);
+        params.insert("filter", SE_FILTER);
         if let Some(key) = &self.config.api_key {
-            params.insert("key", key.as_str());
+            params.insert("key", &key);
         }
         params
     }
@@ -162,7 +184,6 @@ impl LocalStorage {
 
     // TODO inform user if we are downloading
     pub async fn sites(&mut self) -> Result<&Vec<Site>> {
-        // Stop once Option ~ Some or Result ~ Err
         if self.sites.is_none() && !self.fetch_local_sites()? {
             self.fetch_remote_sites().await?;
         }
@@ -177,12 +198,18 @@ impl LocalStorage {
         self.fetch_remote_sites().await
     }
 
-    pub async fn validate_site(&mut self, site_code: &str) -> Result<bool> {
-        Ok(self
+    // TODO is this HM worth it? Probably only will ever have < 10 site codes to search...
+    pub async fn find_invalid_site<'a, 'b>(
+        &'b mut self,
+        site_codes: &'a [String],
+    ) -> Result<Option<&'a String>> {
+        let hm: HashMap<&str, ()> = self
             .sites()
             .await?
             .iter()
-            .any(|site| site.api_site_parameter == *site_code))
+            .map(|site| (site.api_site_parameter.as_str(), ()))
+            .collect();
+        Ok(site_codes.iter().find(|s| !hm.contains_key(&s.as_str())))
     }
 
     fn fetch_local_sites(&mut self) -> Result<bool> {

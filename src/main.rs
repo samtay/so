@@ -36,7 +36,7 @@ async fn main() -> Result<(), Error> {
 async fn run(skin: &mut MadSkin) -> Result<(), Error> {
     let opts = cli::get_opts()?;
     let config = opts.config;
-    let site = &config.site;
+    let sites = &config.sites;
     let lucky = config.lucky;
     let mut ls = LocalStorage::new()?;
 
@@ -62,7 +62,7 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
         return Ok(());
     }
 
-    if !ls.validate_site(site).await? {
+    if let Some(site) = ls.find_invalid_site(sites).await? {
         print_error!(skin, "$0 is not a valid StackExchange site.\n\n", site)?;
         // TODO should only use inline for single lines; use termimad::text stuff
         print_notice!(

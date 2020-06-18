@@ -7,12 +7,12 @@ use std::path::PathBuf;
 use crate::error::{Error, Result};
 use crate::utils;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Config {
     pub api_key: Option<String>,
     pub limit: u16,
     pub lucky: bool,
-    pub site: String,
+    pub sites: Vec<String>,
 }
 
 // TODO make a friender config file, like the colors.toml below
@@ -22,7 +22,7 @@ impl Default for Config {
             api_key: None,
             limit: 20,
             lucky: true,
-            site: String::from("stackoverflow"),
+            sites: vec![String::from("stackoverflow")],
         }
     }
 }

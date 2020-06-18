@@ -17,6 +17,7 @@ pub struct Opts {
 pub fn get_opts() -> Result<Opts> {
     let config = config::user_config()?;
     let limit = &config.limit.to_string();
+    let sites = &config.sites.join(";");
     let matches = App::new("so")
         .setting(AppSettings::ColoredHelp)
         .version(clap::crate_version!())
@@ -43,11 +44,11 @@ pub fn get_opts() -> Result<Opts> {
             Arg::with_name("site")
                 .long("site")
                 .short("s")
-                .multiple(false) // TODO sites plural
+                .multiple(true)
                 .number_of_values(1)
                 .takes_value(true)
-                .default_value(&config.site)
-                .help("StackExchange site code to search"), // TODO sites plural
+                .default_value(sites)
+                .help("StackExchange site code to search"),
         )
         .arg(
             Arg::with_name("limit")
@@ -92,7 +93,13 @@ pub fn get_opts() -> Result<Opts> {
         config: Config {
             // these unwraps are safe via clap default values & validators
             limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),
-            site: matches.value_of("site").unwrap().to_string(), // TODO values_of
+            sites: matches
+                .values_of("site")
+                .unwrap()
+                .map(|s| s.split(';'))
+                .flatten()
+                .map(String::from)
+                .collect(),
             api_key: matches
                 .value_of("set-api-key")
                 .map(String::from)
