@@ -91,9 +91,13 @@ impl StackExchange {
     }
 
     /// Search query at stack exchange and get the top answer body
+    ///
+    /// For now, use only the first configured site, since, parodoxically, sites
+    /// with the worst results will finish executing first, since there's less
+    /// data to retrieve.
     pub async fn search_lucky(&self) -> Result<String> {
         Ok(self
-            .search_advanced(1)
+            .search_advanced_site(self.config.sites.iter().next().unwrap(), 1)
             .await?
             .into_iter()
             .next()
