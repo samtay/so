@@ -1,7 +1,7 @@
 mod app;
 mod entities;
 mod enumerable;
-mod markdown;
+pub mod markdown;
 mod ui;
 mod views;
 

@@ -11,7 +11,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::rc::Rc;
 
-use super::markdown;
+use super::markdown::Markdown;
 use crate::error::Result;
 
 pub const NAME_QUESTION_LIST: &str = "question_list";
@@ -243,13 +243,10 @@ impl MdView {
     }
 
     /// Panics for now, to explore when result is None
-    pub fn set_content<S>(&mut self, content: S)
-    where
-        S: Into<String>,
-    {
+    pub fn set_content(&mut self, content: &Markdown) {
         self.view
             .call_on_name(&self.inner_name, |tv: &mut TextView| {
-                tv.set_content(markdown::parse(content))
+                tv.set_content(content.clone())
             })
             .expect("unwrap failed in MdView.set_content")
     }
@@ -310,6 +307,7 @@ impl ViewWrapper for LayoutView {
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
         match event {
             Event::WindowResize => {
+                println!("window resized");
                 self.size_invalidated = true;
             }
             Event::Char(' ') => {

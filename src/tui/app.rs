@@ -4,11 +4,11 @@ use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
 use cursive::Cursive;
 use cursive::XY;
-use std::cmp;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::markdown;
+use super::markdown::Markdown;
 use super::views::{
     LayoutView, ListView, MdView, Name, Vimable, NAME_ANSWER_LIST, NAME_ANSWER_VIEW,
     NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
@@ -17,16 +17,14 @@ use crate::config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
 
-// TODO maybe a struct like Tui::new(stackexchange) creates App::new and impls tui.run()?
-// TODO take async questions
-// TODO take the entire SE struct for future questions
-pub fn run(qs: Vec<Question>) -> Result<()> {
+pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     let mut siv = cursive::default();
     siv.load_theme_file(config::theme_file_name()?).unwrap(); // TODO dont unwrap
 
-    let question_map: HashMap<u32, Question> = qs.clone().into_iter().map(|q| (q.id, q)).collect();
+    let question_map: HashMap<u32, Question<Markdown>> =
+        qs.clone().into_iter().map(|q| (q.id, q)).collect();
     let question_map = Arc::new(question_map);
-    let answer_map: HashMap<u32, Answer> = qs
+    let answer_map: HashMap<u32, Answer<Markdown>> = qs
         .clone()
         .into_iter()
         .map(|q| q.answers.into_iter().map(|a| (a.id, a)))
@@ -74,15 +72,16 @@ pub fn run(qs: Vec<Question>) -> Result<()> {
 }
 
 fn question_selected_callback(
-    question_map: Arc<HashMap<u32, Question>>,
+    question_map: Arc<HashMap<u32, Question<Markdown>>>,
     mut s: &mut Cursive,
     qid: u32,
 ) {
     let q = question_map.get(&qid).unwrap();
+    let body = &q.body;
     let XY { x, y: _y } = s.screen_size();
     // Update question view
     s.call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
-        v.set_content(&q.body);
+        v.set_content(body);
     })
     .expect("Panic: setting question view content failed");
     // Update answer list view
@@ -94,15 +93,14 @@ fn question_selected_callback(
     cb(&mut s)
 }
 
-fn preview_question(q: &Question) -> StyledString {
+fn preview_question(q: &Question<Markdown>) -> StyledString {
     let mut preview = pretty_score(q.score);
     preview.append_plain(&q.title);
     preview
 }
 
-fn preview_answer(screen_width: usize, a: &Answer) -> StyledString {
-    let width = cmp::min(a.body.len(), screen_width);
-    let md = markdown::preview(width, a.body.to_owned());
+fn preview_answer(screen_width: usize, a: &Answer<Markdown>) -> StyledString {
+    let md = markdown::preview(screen_width, &a.body);
     let mut preview = pretty_score(a.score);
     if a.is_accepted {
         preview.append_styled(

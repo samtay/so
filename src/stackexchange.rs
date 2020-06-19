@@ -1,4 +1,5 @@
 use futures::stream::StreamExt;
+use rayon::prelude::*;
 use reqwest::Client;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -8,6 +9,8 @@ use std::path::PathBuf;
 
 use crate::config::{project_dir, Config};
 use crate::error::{Error, Result};
+use crate::tui::markdown;
+use crate::tui::markdown::Markdown;
 use crate::utils;
 
 /// StackExchange API v2.2 URL
@@ -50,12 +53,12 @@ pub struct Site {
 /// Represents a StackExchange answer with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/answer)
 #[derive(Clone, Deserialize, Debug)]
-pub struct Answer {
+pub struct Answer<S> {
     #[serde(rename = "answer_id")]
     pub id: u32,
     pub score: i32,
     #[serde(rename = "body_markdown")]
-    pub body: String,
+    pub body: S,
     pub is_accepted: bool,
 }
 
@@ -64,14 +67,14 @@ pub struct Answer {
 // TODO container over answers should be generic iterator
 // TODO let body be a generic that implements Display!
 #[derive(Clone, Deserialize, Debug)]
-pub struct Question {
+pub struct Question<S> {
     #[serde(rename = "question_id")]
     pub id: u32,
     pub score: i32,
-    pub answers: Vec<Answer>,
+    pub answers: Vec<Answer<S>>,
     pub title: String,
     #[serde(rename = "body_markdown")]
-    pub body: String,
+    pub body: S,
 }
 
 /// Internal struct that represents the boilerplate response wrapper from SE API.
@@ -110,12 +113,12 @@ impl StackExchange {
     }
 
     /// Search query at stack exchange and get a list of relevant questions
-    pub async fn search(&self) -> Result<Vec<Question>> {
+    pub async fn search(&self) -> Result<Vec<Question<Markdown>>> {
         self.search_advanced(self.config.limit).await
     }
 
     /// Parallel searches against the search/advanced endpoint across all configured sites
-    async fn search_advanced(&self, limit: u16) -> Result<Vec<Question>> {
+    async fn search_advanced(&self, limit: u16) -> Result<Vec<Question<Markdown>>> {
         futures::stream::iter(self.config.sites.clone())
             .map(|site| {
                 let clone = self.clone();
@@ -131,18 +134,18 @@ impl StackExchange {
             .map(|r| r.map_err(Error::from).and_then(|x| x))
             .collect::<Result<Vec<Vec<_>>>>()
             .map(|v| {
-                let mut all_qs: Vec<Question> = v.into_iter().flatten().collect();
+                let mut qs: Vec<Question<String>> = v.into_iter().flatten().collect();
                 if self.config.sites.len() > 1 {
-                    all_qs.sort_unstable_by_key(|q| -q.score);
+                    qs.sort_unstable_by_key(|q| -q.score);
                 }
-                all_qs
+                Self::parse_markdown(qs)
             })
     }
 
     /// Search against the site's search/advanced endpoint with a given query.
     /// Only fetches questions that have at least one answer.
-    async fn search_advanced_site(&self, site: &str, limit: u16) -> Result<Vec<Question>> {
-        Ok(self
+    async fn search_advanced_site(&self, site: &str, limit: u16) -> Result<Vec<Question<String>>> {
+        let qs = self
             .client
             .get(stackexchange_url("search/advanced"))
             .header("Accepts", "application/json")
@@ -158,16 +161,10 @@ impl StackExchange {
             ])
             .send()
             .await?
-            .json::<ResponseWrapper<Question>>()
+            .json::<ResponseWrapper<Question<String>>>()
             .await?
-            .items
-            .into_iter()
-            .map(|mut q| {
-                // TODO parallelize this (and preprocess <kbd> stuff too)
-                q.answers.sort_unstable_by_key(|a| -a.score);
-                q
-            })
-            .collect())
+            .items;
+        Ok(Self::preprocess(qs))
     }
 
     fn get_default_opts(&self) -> HashMap<&str, &str> {
@@ -177,6 +174,78 @@ impl StackExchange {
             params.insert("key", &key);
         }
         params
+    }
+
+    /// Sorts answers by score
+    /// Preprocess SE markdown to "cmark" markdown (or something closer to it)
+    fn preprocess(qs: Vec<Question<String>>) -> Vec<Question<String>> {
+        qs.par_iter()
+            .map(|q| {
+                let Question {
+                    id,
+                    score,
+                    title,
+                    answers,
+                    body,
+                } = q;
+                answers.to_vec().par_sort_unstable_by_key(|a| -a.score);
+                let answers = answers
+                    .par_iter()
+                    .map(|a| Answer {
+                        body: markdown::preprocess(a.body.clone()),
+                        ..*a
+                    })
+                    .collect();
+                Question {
+                    answers,
+                    body: markdown::preprocess(body.to_string()),
+                    id: *id,
+                    score: *score,
+                    title: title.to_string(),
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Parse all markdown fields
+    fn parse_markdown(qs: Vec<Question<String>>) -> Vec<Question<Markdown>> {
+        qs.par_iter()
+            .map(|q| {
+                let Question {
+                    id,
+                    score,
+                    title,
+                    answers,
+                    body,
+                } = q;
+                let body = markdown::parse(body);
+                let answers = answers
+                    .par_iter()
+                    .map(|a| {
+                        let Answer {
+                            id,
+                            score,
+                            is_accepted,
+                            body,
+                        } = a;
+                        let body = markdown::parse(body);
+                        Answer {
+                            body,
+                            id: *id,
+                            score: *score,
+                            is_accepted: *is_accepted,
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                Question {
+                    body,
+                    answers,
+                    id: *id,
+                    score: *score,
+                    title: title.to_string(),
+                }
+            })
+            .collect::<Vec<_>>()
     }
 }
 

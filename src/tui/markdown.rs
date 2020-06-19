@@ -17,50 +17,23 @@ use unicode_width::UnicodeWidthStr;
 
 use super::entities::is_entity;
 
+pub type Markdown = StyledString;
+
 /// Parses the given string as markdown text.
+/// **Note**: Assumes preprocessing has taken place
 pub fn parse<S>(input: S) -> StyledString
 where
     S: Into<String>,
 {
-    let input = preprocess(input.into());
+    let input = input.into();
     let spans = parse_spans(&input);
     //let output = build_output(&spans);
     StyledString::with_spans(input, spans)
 }
 
-/// Preview markdown. Largely heuristic.
-pub fn preview<S>(size: usize, input: S) -> StyledString
-where
-    S: Into<String>,
-{
-    // DO the initial parsing here too, not just in `parse`
-    let generous_size = (size as f32) * 1.2;
-    let generous_size = generous_size.ceil();
-    let generous_size = generous_size as usize;
-    let mut input = input.into();
-    input.truncate(generous_size);
-    let input = preprocess(input);
-    let spans = parse_spans(&input)
-        .into_iter()
-        // Filter out newlines
-        .map(|ix_span| match ix_span {
-            IndexedSpan { width: 0, .. } => IndexedSpan {
-                content: IndexedCow::Owned(" ".to_owned()),
-                width: 1,
-                ..ix_span
-            },
-            is => is,
-        })
-        .collect();
-
-    let mut prev = StyledString::with_spans(input, spans);
-    prev.append_plain("...");
-    prev
-}
-
-fn preprocess(input: String) -> String {
-    // TODO handle other stackexchange oddities here ENTITIES
-    // TODO then benchmark
+// TODO handle other stackexchange oddities here ENTITIES
+// TODO then benchmark
+pub fn preprocess(input: String) -> String {
     input
         .as_str()
         .trim()
@@ -68,8 +41,33 @@ fn preprocess(input: String) -> String {
         .replace("</kbd>", "]**")
 }
 
+/// Preview markdown of the given length
+pub fn preview(width: usize, input: &StyledString) -> StyledString {
+    let mut w = 0;
+    let mut new_spans = Vec::new();
+    for span in input.spans_raw() {
+        // Filter newlines
+        if span.width == 0 {
+            w += 1;
+            new_spans.push(IndexedSpan {
+                content: IndexedCow::Owned(" ".to_owned()),
+                width: 1,
+                ..*span
+            });
+        } else {
+            w += span.width;
+            new_spans.push(span.clone());
+        }
+        if w > width {
+            break;
+        }
+    }
+    let mut prev = StyledString::with_spans(input.source(), new_spans);
+    prev.append_plain("...");
+    prev
+}
+
 /// Parse the given markdown text into a list of spans.
-/// Assumes preprocessing has taken place
 /// This is a shortcut for `Parser::new(preprocessed_input).collect()`.
 fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
     Parser::new(input).collect()
