@@ -1,5 +1,7 @@
 # TODO
 
+[ ] Fix resizing. Something in `wait_for_char` screws up the future cursive app...
+
 ### v0.3.0
 1. Duckduck go search ftw, e.g.
 ```

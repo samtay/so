@@ -37,9 +37,7 @@ pub fn wait_for_char(c: char) -> Result<bool> {
                 pressed = true;
                 break;
             }
-            Event::Key(_) => {
-                break;
-            }
+            Event::Key(_) => break,
             _ => (),
         }
     }

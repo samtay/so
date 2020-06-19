@@ -6,6 +6,8 @@ mod term;
 mod tui;
 mod utils;
 
+use crate::stackexchange::Question;
+use crate::tui::markdown::Markdown;
 use crossterm::style::Color;
 use error::{Error, Result};
 use lazy_static::lazy_static;
@@ -13,27 +15,39 @@ use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
 use term::mk_print_error;
 use termimad::{CompoundStyle, MadSkin};
+use tokio::runtime::Runtime;
 use tokio::task;
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<()> {
+    // Markdown styles (outside of TUI)
     let mut skin = MadSkin::default();
-    // TODO style configuration
     skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
     skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
     let mut print_error = mk_print_error(&skin);
-    run(&mut skin).await.or_else(|e: Error| {
-        print_error(&e.to_string())?;
-        match e {
-            Error::EmptySites => {
-                print_notice!(skin, "This can likely be fixed by `so --update-sites`.")
+
+    // Tokio runtime
+    let mut rt = Runtime::new()?;
+    rt.block_on(run(&mut skin))
+        .and_then(|qs| {
+            // Run TUI
+            qs.map(tui::run);
+            Ok(())
+        })
+        .or_else(|e: Error| {
+            // Handle errors
+            print_error(&e.to_string())?;
+            match e {
+                Error::EmptySites => {
+                    print_notice!(skin, "This can likely be fixed by `so --update-sites`.")
+                }
+                _ => Ok(()),
             }
-            _ => Ok(()),
-        }
-    })
+        })
 }
 
-async fn run(skin: &mut MadSkin) -> Result<(), Error> {
+/// Runs the CLI and, if the user wishes to enter the TUI, returns
+/// question/answer data
+async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     let opts = cli::get_opts()?;
     let config = opts.config;
     let sites = &config.sites;
@@ -59,7 +73,7 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
         }
         md.push_str("|-\n");
         termimad::print_text(&md);
-        return Ok(());
+        return Ok(None);
     }
 
     if let Some(site) = ls.find_invalid_site(sites).await? {
@@ -74,7 +88,7 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
                 to update the cached site listing. You can also run `so --list-sites` \
                 to list all available sites.",
         )?;
-        return Ok(());
+        return Ok(None);
     }
 
     if let Some(q) = opts.query {
@@ -87,12 +101,12 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
             // Kick off the rest of the search in the background
             let qs = task::spawn(async move { se.search().await });
             if !utils::wait_for_char(' ')? {
-                return Ok(());
+                return Ok(None);
             }
-            tui::run(qs.await.unwrap()?)?;
+            return Ok(Some(qs.await.unwrap()?));
         } else {
-            tui::run(se.search().await?)?;
+            return Ok(Some(se.search().await?));
         }
     }
-    Ok(())
+    Ok(None)
 }
