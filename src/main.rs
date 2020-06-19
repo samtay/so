@@ -11,18 +11,17 @@ use error::{Error, Result};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
 use stackexchange::{LocalStorage, StackExchange};
+use std::thread;
 use term::mk_print_error;
 use termimad::{CompoundStyle, MadSkin};
-use tokio::task;
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     let mut skin = MadSkin::default();
     // TODO style configuration
     skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
     skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
     let mut print_error = mk_print_error(&skin);
-    run(&mut skin).await.or_else(|e: Error| {
+    run(&mut skin).or_else(|e: Error| {
         print_error(&e.to_string())?;
         match e {
             Error::EmptySites => {
@@ -33,7 +32,7 @@ async fn main() -> Result<(), Error> {
     })
 }
 
-async fn run(skin: &mut MadSkin) -> Result<(), Error> {
+fn run(skin: &mut MadSkin) -> Result<(), Error> {
     let opts = cli::get_opts()?;
     let config = opts.config;
     let sites = &config.sites;
@@ -45,11 +44,11 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
     }
 
     if opts.update_sites {
-        ls.update_sites().await?;
+        ls.update_sites()?;
     }
 
     if opts.list_sites {
-        let sites = ls.sites().await?;
+        let sites = ls.sites()?;
         let mut md = String::new();
         md.push_str("|:-:|:-:|\n");
         md.push_str("|Site Code|Site URL|\n");
@@ -62,7 +61,7 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
         return Ok(());
     }
 
-    if let Some(site) = ls.find_invalid_site(sites).await? {
+    if let Some(site) = ls.find_invalid_site(sites)? {
         print_error!(skin, "$0 is not a valid StackExchange site.\n\n", site)?;
         // TODO should only use inline for single lines; use termimad::text stuff
         print_notice!(
@@ -81,17 +80,17 @@ async fn run(skin: &mut MadSkin) -> Result<(), Error> {
         let se = StackExchange::new(config, q);
         if lucky {
             // TODO this needs preprocessing; all the more reason to do it at SE level
-            let md = se.search_lucky().await?;
+            let md = se.search_lucky()?;
             skin.print_text(&md);
             skin.print_text("\nPress **[SPACE]** to see more results, or any other key to exit");
             // Kick off the rest of the search in the background
-            let qs = task::spawn(async move { se.search().await });
+            let handler = thread::spawn(move || se.search());
             if !utils::wait_for_char(' ')? {
                 return Ok(());
             }
-            tui::run(qs.await.unwrap()?)?;
+            tui::run(handler.join().unwrap()?)?;
         } else {
-            tui::run(se.search().await?)?;
+            tui::run(se.search()?)?;
         }
     }
     Ok(())

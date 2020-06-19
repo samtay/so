@@ -16,8 +16,6 @@ pub enum Error {
     SerdeYaml(#[from] serde_yaml::Error),
     #[error("IO error: {0}")]
     IO(#[from] std::io::Error),
-    #[error("Futures Join error : {0}")]
-    JoinError(#[from] tokio::task::JoinError),
     #[error("File `{}` is malformed; try removing it", .0.display())]
     MalformedFile(PathBuf),
     #[error("Lacking {0:?} permissions on `{}`", .1.display())]

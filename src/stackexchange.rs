@@ -1,6 +1,5 @@
-use futures::stream::StreamExt;
 use rayon::prelude::*;
-use reqwest::Client;
+use reqwest::blocking::Client;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -24,9 +23,6 @@ const SE_FILTER: &str = ".DND5X2VHHUH8HyJzpjo)5NvdHI3w6auG";
 
 /// Pagesize when fetching all SE sites. Should be good for many years...
 const SE_SITES_PAGESIZE: u16 = 10000;
-
-/// Limit on concurrent requests (gets passed to `buffer_unordered`)
-const CONCURRENT_REQUESTS_LIMIT: usize = 8;
 
 /// This structure allows interacting with parts of the StackExchange
 /// API, using the `Config` struct to determine certain API settings and options.
@@ -98,10 +94,9 @@ impl StackExchange {
     /// For now, use only the first configured site, since, parodoxically, sites
     /// with the worst results will finish executing first, since there's less
     /// data to retrieve.
-    pub async fn search_lucky(&self) -> Result<String> {
+    pub fn search_lucky(&self) -> Result<String> {
         Ok(self
-            .search_advanced_site(self.config.sites.iter().next().unwrap(), 1)
-            .await?
+            .search_advanced_site(self.config.sites.iter().next().unwrap(), 1)?
             .into_iter()
             .next()
             .ok_or(Error::NoResults)?
@@ -113,26 +108,17 @@ impl StackExchange {
     }
 
     /// Search query at stack exchange and get a list of relevant questions
-    pub async fn search(&self) -> Result<Vec<Question<Markdown>>> {
-        self.search_advanced(self.config.limit).await
+    pub fn search(&self) -> Result<Vec<Question<Markdown>>> {
+        self.search_advanced(self.config.limit)
     }
 
     /// Parallel searches against the search/advanced endpoint across all configured sites
-    async fn search_advanced(&self, limit: u16) -> Result<Vec<Question<Markdown>>> {
-        futures::stream::iter(self.config.sites.clone())
-            .map(|site| {
-                let clone = self.clone();
-                tokio::spawn(async move {
-                    let clone = &clone;
-                    clone.search_advanced_site(&site, limit).await
-                })
-            })
-            .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
-            .collect::<Vec<_>>()
-            .await
-            .into_iter()
-            .map(|r| r.map_err(Error::from).and_then(|x| x))
-            .collect::<Result<Vec<Vec<_>>>>()
+    fn search_advanced(&self, limit: u16) -> Result<Vec<Question<Markdown>>> {
+        self.config
+            .sites
+            .iter()
+            .map(|site| self.search_advanced_site(&site, limit))
+            .collect::<Result<Vec<_>>>()
             .map(|v| {
                 let mut qs: Vec<Question<String>> = v.into_iter().flatten().collect();
                 if self.config.sites.len() > 1 {
@@ -144,7 +130,7 @@ impl StackExchange {
 
     /// Search against the site's search/advanced endpoint with a given query.
     /// Only fetches questions that have at least one answer.
-    async fn search_advanced_site(&self, site: &str, limit: u16) -> Result<Vec<Question<String>>> {
+    fn search_advanced_site(&self, site: &str, limit: u16) -> Result<Vec<Question<String>>> {
         let qs = self
             .client
             .get(stackexchange_url("search/advanced"))
@@ -159,10 +145,8 @@ impl StackExchange {
                 ("order", "desc"),
                 ("sort", "relevance"),
             ])
-            .send()
-            .await?
-            .json::<ResponseWrapper<Question<String>>>()
-            .await?
+            .send()?
+            .json::<ResponseWrapper<Question<String>>>()?
             .items;
         Ok(Self::preprocess(qs))
     }
@@ -261,9 +245,9 @@ impl LocalStorage {
     }
 
     // TODO inform user if we are downloading
-    pub async fn sites(&mut self) -> Result<&Vec<Site>> {
+    pub fn sites(&mut self) -> Result<&Vec<Site>> {
         if self.sites.is_none() && !self.fetch_local_sites()? {
-            self.fetch_remote_sites().await?;
+            self.fetch_remote_sites()?;
         }
         match &self.sites {
             Some(sites) if sites.is_empty() => Err(Error::EmptySites),
@@ -272,18 +256,17 @@ impl LocalStorage {
         }
     }
 
-    pub async fn update_sites(&mut self) -> Result<()> {
-        self.fetch_remote_sites().await
+    pub fn update_sites(&mut self) -> Result<()> {
+        self.fetch_remote_sites()
     }
 
     // TODO is this HM worth it? Probably only will ever have < 10 site codes to search...
-    pub async fn find_invalid_site<'a, 'b>(
+    pub fn find_invalid_site<'a, 'b>(
         &'b mut self,
         site_codes: &'a [String],
     ) -> Result<Option<&'a String>> {
         let hm: HashMap<&str, ()> = self
-            .sites()
-            .await?
+            .sites()?
             .iter()
             .map(|site| (site.api_site_parameter.as_str(), ()))
             .collect();
@@ -302,7 +285,7 @@ impl LocalStorage {
     }
 
     // TODO decide whether or not I should give LocalStorage an api key..
-    async fn fetch_remote_sites(&mut self) -> Result<()> {
+    fn fetch_remote_sites(&mut self) -> Result<()> {
         self.sites = Some(
             Client::new()
                 .get(stackexchange_url("sites"))
@@ -311,10 +294,8 @@ impl LocalStorage {
                     ("pagesize", SE_SITES_PAGESIZE.to_string()),
                     ("page", "1".to_string()),
                 ])
-                .send()
-                .await?
-                .json::<ResponseWrapper<Site>>()
-                .await?
+                .send()?
+                .json::<ResponseWrapper<Site>>()?
                 .items,
         );
         self.store_local_sites()
