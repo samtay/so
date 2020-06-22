@@ -287,6 +287,7 @@ pub struct LayoutView {
     layout: Layout,
     layout_invalidated: bool,
     size_invalidated: bool,
+    last_size: Option<Vec2>,
 }
 
 struct LayoutViewSizing {
@@ -305,31 +306,30 @@ impl ViewWrapper for LayoutView {
     cursive::wrap_impl!(self.view: PaddedView<LinearLayout>);
 
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
-        match event {
-            Event::WindowResize => {
-                println!("window resized");
-                self.size_invalidated = true;
-            }
-            Event::Char(' ') => {
-                self.cycle_layout();
-                self.layout_invalidated = true;
-                return EventResult::Consumed(None);
-            }
-            _ => (),
+        if let Event::Char(' ') = event {
+            self.cycle_layout();
+            self.layout_invalidated = true;
+            return EventResult::Consumed(None);
         }
 
         self.view.on_event(event)
     }
 
     fn wrap_required_size(&mut self, req: Vec2) -> Vec2 {
+        if self.last_size != Some(req) {
+            self.size_invalidated = true;
+            self.last_size = Some(req);
+        }
         req
     }
 
     fn wrap_layout(&mut self, size: Vec2) {
-        self.resize(size);
-        self.relayout();
-        self.layout_invalidated = false;
+        if self.layout_invalidated || self.size_invalidated {
+            self.resize(size);
+            self.relayout();
+        }
         self.size_invalidated = false;
+        self.layout_invalidated = false;
         self.view.layout(size);
     }
 
@@ -354,6 +354,7 @@ impl LayoutView {
             view,
             layout_invalidated: true,
             size_invalidated: true,
+            last_size: None,
             layout: Layout::BothColumns,
         })
         .with_name(NAME_FULL_LAYOUT)

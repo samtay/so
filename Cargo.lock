@@ -323,6 +323,7 @@ dependencies = [
  "ahash",
  "cfg-if",
  "crossbeam-channel",
+ "crossterm",
  "cursive_core",
  "enumset",
  "lazy_static",

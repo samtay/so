@@ -1,23 +1,11 @@
 # TODO
 
-[ ] Fix resizing. Something in `wait_for_char` screws up the future cursive app...
-
 ### v0.3.0
 1. Duckduck go search ftw, e.g.
 ```
 (site:stackoverflow.com OR site:unix.stackexchange.com) what is linux
 ```
 etc.
-
-#### Tech debt and low hanging fruit
-1. Use [`par_iter`](https://github.com/rayon-rs/rayon) for text preprocess &
-   parsing. In particular the `tui::markdown::preprocess` function should just
-   get called on all markdown as soon as its received from stack exchange; this
-   is prime for parallelization.
-2. Also, we could `par_iter` the initial q&a data to SpannedStrings from the
-   start, so that it's not done on the fly...
-3. The rest of the questions should really start being fetched while waiting for
-   the user to press [Enter]... maybe start with just simple threads?
 
 ### Endless future improvements for the TUI
 1. Init with smaller layout depending on initial screen size.
@@ -45,13 +33,10 @@ etc.
 6. Google stuff [scraping with reqwest](https://rust-lang-nursery.github.io/rust-cookbook/web/scraping.html))
 
 #### distribution
-7. App Distribution
-   [cross-platform binaries via travis](https://github.com/rustwasm/wasm-pack/blob/51e6351c28fbd40745719e6d4a7bf26dadd30c85/.travis.yml#L74-L91)
-   also see lobster script in this [repo](https://git.sr.ht/~wezm/lobsters).
-9. Great tui-rs [example app](https://github.com/SoptikHa2/desed/blob/master/src/ui/tui.rs)
-11. general CI & deploy [info](https://rust-cli.github.io/book/tutorial/packaging.html)
-12. window binaries deployed via [github actions](https://github.com/rust-av/av-metrics)
-13. oh game over [dawg](https://github.com/japaric/trust)
+1. oh game over [dawg](https://github.com/japaric/trust)
+2. also, use [feature flags]() to select backend. Only use crossterm on Windows
+   since it is rather jumpy...
+
 
 #### ideas
 5. Add sort option, e.g. relevance|votes|date

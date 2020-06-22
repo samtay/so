@@ -26,8 +26,8 @@ pub fn create_file(filename: &PathBuf) -> Result<File> {
 }
 
 pub fn wait_for_char(c: char) -> Result<bool> {
-    terminal::enable_raw_mode()?;
     let mut pressed = false;
+    terminal::enable_raw_mode()?;
     loop {
         match read()? {
             Event::Key(KeyEvent {
