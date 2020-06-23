@@ -33,3 +33,4 @@
 [ ] add duckduckgo logo to readme
 [ ] per platform package mgmt
 [ ] more testing
+[ ] maybe add google engine too. but fuck google.

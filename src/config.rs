@@ -13,6 +13,7 @@ pub struct Config {
     pub limit: u16,
     pub lucky: bool,
     pub sites: Vec<String>,
+    pub duckduckgo: bool,
 }
 
 // TODO make a friender config file, like the colors.toml below
@@ -23,6 +24,7 @@ impl Default for Config {
             limit: 20,
             lucky: true,
             sites: vec![String::from("stackoverflow")],
+            duckduckgo: true,
         }
     }
 }
@@ -33,13 +35,22 @@ pub fn user_config() -> Result<Config> {
     let dir = project.config_dir();
     fs::create_dir_all(&dir)?;
     let filename = config_file_name()?;
+
     match utils::open_file(&filename)? {
         None => {
             let def = Config::default();
             write_config(&def)?;
             Ok(def)
         }
-        Some(file) => serde_yaml::from_reader(file).map_err(|_| Error::MalformedFile(filename)),
+        Some(file) => serde_yaml::from_reader(file)
+            .map_err(|_| Error::MalformedFile(filename.clone()))
+            .and_then(|cfg: Config| {
+                if cfg.sites.is_empty() {
+                    Err(Error::MalformedFile(filename))
+                } else {
+                    Ok(cfg)
+                }
+            }),
     }
 }
 

@@ -1,11 +1,22 @@
 # TODO
 
 ### v0.3.0
-1. Duckduck go search ftw, e.g.
-```
-(site:stackoverflow.com OR site:unix.stackexchange.com) what is linux
-```
-etc.
+1. Keep relevance ordering !!!
+
+### v0.3.1
+1. Much of the code can be reused for google:
+    * parsing href after `"url="` (similar to uddg)
+    * formatting `(site:stackoverflow.com OR site:unix.stackexchange.com) what is linux`
+  So make a `Scraper` trait and implement it for DDG & Google. Then
+  `stackexchange` can just code against `Scraper` and choose based on
+  `--search-engine | -e' argument`
+2. Maybe reorganize to
+   - stackexchange
+     - api
+     - scraper
+
+
+
 
 ### Endless future improvements for the TUI
 1. Init with smaller layout depending on initial screen size.
@@ -20,23 +31,29 @@ etc.
 
 ### resources for later
 
-#### async
-1. start with [this](http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust) but also see the following gist and thread through the below links to make sure its actually async..
-0. breakdown of futures+reqwest [here](https://stackoverflow.com/questions/51044467/how-can-i-perform-parallel-asynchronous-http-get-requests-with-reqwest)
-0. general concurrency in rust [info](https://blog.yoshuawuyts.com/streams-concurrency/)
-0. [Intro to async rust](http://jamesmcm.github.io/blog/2020/05/06/a-practical-introduction-to-async-programming-in-rust/)
-1. Async API calls [tokio](https://stackoverflow.com/a/57770687)
-2. Parallel calls against multiple sites [vid](https://www.youtube.com/watch?v=O-LagKc0MPA)
-0. OR JUST THREADS [see here](https://rust-lang.github.io/async-book/01_getting_started/02_why_async.html)
-
 #### scraping
 6. Google stuff [scraping with reqwest](https://rust-lang-nursery.github.io/rust-cookbook/web/scraping.html))
 
+```python
+# if necessary, choose one of these to mimic browswer request
+USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
+               'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
+                              'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
+                                             ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) '
+                                                             'Chrome/19.0.1084.46 Safari/536.5'),
+                                                                            ('Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46'
+                                                                                            'Safari/536.5'), )
+
+# checks for search engine blocks
+BLOCK_INDICATORS = (
+    'form id="captcha-form"',
+    'This page appears when Google automatically detects requests coming from your computer '
+    'network which appear to be in violation of the <a href="//www.google.com/policies/terms/">Terms of Service'
+)
+```
+
 #### distribution
 1. oh game over [dawg](https://github.com/japaric/trust)
-2. also, use [feature flags]() to select backend. Only use crossterm on Windows
-   since it is rather jumpy...
-
 
 #### ideas
 5. Add sort option, e.g. relevance|votes|date

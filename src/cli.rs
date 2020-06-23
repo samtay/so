@@ -58,7 +58,7 @@ pub fn get_opts() -> Result<Opts> {
                 .takes_value(true)
                 .default_value(limit)
                 .validator(|s| s.parse::<u32>().map_err(|e| e.to_string()).map(|_| ()))
-                .help("Question limit per site query"),
+                .help("Question limit"),
         )
         .arg(
             Arg::with_name("lucky")
@@ -69,7 +69,8 @@ pub fn get_opts() -> Result<Opts> {
             Arg::with_name("no-lucky")
                 .long("no-lucky")
                 .help("Disable lucky")
-                .conflicts_with("lucky"),
+                .conflicts_with("lucky")
+                .hidden(!config.lucky),
         )
         .arg(
             Arg::with_name("query")
@@ -77,11 +78,31 @@ pub fn get_opts() -> Result<Opts> {
                 .index(1)
                 .required_unless_one(&["list-sites", "update-sites", "set-api-key"]),
         )
+        .arg(
+            Arg::with_name("duckduckgo")
+                .long("duckduckgo")
+                .help("Use DuckDuckGo as a search engine"),
+        )
+        .arg(
+            Arg::with_name("no-duckduckgo")
+                .long("no-duckduckgo")
+                .help("Disable duckduckgo")
+                .conflicts_with("duckduckgo")
+                .hidden(!config.duckduckgo),
+        )
         .get_matches();
     let lucky = match (matches.is_present("lucky"), matches.is_present("no-lucky")) {
         (true, _) => true,
         (_, true) => false,
         _ => config.lucky,
+    };
+    let duckduckgo = match (
+        matches.is_present("duckduckgo"),
+        matches.is_present("no-duckduckgo"),
+    ) {
+        (true, _) => true,
+        (_, true) => false,
+        _ => config.duckduckgo,
     };
     Ok(Opts {
         list_sites: matches.is_present("list-sites"),
@@ -105,6 +126,7 @@ pub fn get_opts() -> Result<Opts> {
                 .map(String::from)
                 .or(config.api_key),
             lucky,
+            duckduckgo,
         },
     })
 }

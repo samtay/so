@@ -24,10 +24,10 @@ pub enum Error {
     Permissions(PermissionType, PathBuf),
     #[error("{0}")]
     StackExchange(String),
+    #[error("{0}")]
+    ScrapingError(String),
     #[error("Couldn't find a suitable project directory; is your OS supported?")]
     ProjectDir,
-    #[error("Empty sites file in cache")]
-    EmptySites,
     #[error("Sorry, couldn't find any answers for your query")]
     NoResults,
 }

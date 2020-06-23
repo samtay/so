@@ -35,13 +35,7 @@ fn main() -> Result<()> {
         })
         .or_else(|e: Error| {
             // Handle errors
-            print_error(&e.to_string())?;
-            match e {
-                Error::EmptySites => {
-                    print_notice!(skin, "This can likely be fixed by `so --update-sites`.")
-                }
-                _ => Ok(()),
-            }
+            print_error(&e.to_string())
         })
 }
 
@@ -52,23 +46,19 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     let config = opts.config;
     let sites = &config.sites;
     let lucky = config.lucky;
-    let mut ls = LocalStorage::new()?;
+
+    let ls = LocalStorage::new(opts.update_sites).await?;
 
     if let Some(key) = opts.set_api_key {
         config::set_api_key(key)?;
     }
 
-    if opts.update_sites {
-        ls.update_sites().await?;
-    }
-
     if opts.list_sites {
-        let sites = ls.sites().await?;
         let mut md = String::new();
         md.push_str("|:-:|:-:|\n");
         md.push_str("|Site Code|Site URL|\n");
         md.push_str("|-:|:-|\n");
-        for s in sites.iter() {
+        for s in ls.sites.iter() {
             md.push_str(&format!("|{}|{}\n", s.api_site_parameter, s.site_url));
         }
         md.push_str("|-\n");
@@ -76,7 +66,7 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
         return Ok(None);
     }
 
-    if let Some(site) = ls.find_invalid_site(sites).await? {
+    if let Some(site) = ls.find_invalid_site(sites).await {
         print_error!(skin, "$0 is not a valid StackExchange site.\n\n", site)?;
         // TODO should only use inline for single lines; use termimad::text stuff
         print_notice!(
@@ -92,20 +82,19 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     }
 
     if let Some(q) = opts.query {
-        let se = StackExchange::new(config, q);
+        let mut se = StackExchange::new(config, ls, q);
         if lucky {
-            // TODO this needs preprocessing; all the more reason to do it at SE level
             let md = se.search_lucky().await?;
             skin.print_text(&md);
             skin.print_text("\nPress **[SPACE]** to see more results, or any other key to exit");
             // Kick off the rest of the search in the background
-            let qs = task::spawn(async move { se.search().await });
+            let qs = task::spawn(async move { se.search_md().await });
             if !utils::wait_for_char(' ')? {
                 return Ok(None);
             }
             return Ok(Some(qs.await.unwrap()?));
         } else {
-            return Ok(Some(se.search().await?));
+            return Ok(Some(se.search_md().await?));
         }
     }
     Ok(None)
