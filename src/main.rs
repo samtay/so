@@ -12,7 +12,7 @@ use crossterm::style::Color;
 use error::{Error, Result};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
-use stackexchange::{LocalStorage, StackExchange};
+use stackexchange::{LocalStorage, Search};
 use term::mk_print_error;
 use termimad::{CompoundStyle, MadSkin};
 use tokio::runtime::Runtime;
@@ -82,7 +82,7 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     }
 
     if let Some(q) = opts.query {
-        let mut se = StackExchange::new(config, ls, q);
+        let mut se = Search::new(config, ls, q);
         if lucky {
             let md = se.search_lucky().await?;
             skin.print_text(&md);

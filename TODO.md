@@ -1,6 +1,7 @@
 # TODO
 
 ### v0.3.1
+0. Refactor the enum/struct for search engines
 1. Much of the code can be reused for google:
     * parsing href after `"url="` (similar to uddg)
     * formatting `(site:stackoverflow.com OR site:unix.stackexchange.com) what is linux`
