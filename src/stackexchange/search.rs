@@ -4,14 +4,14 @@ use reqwest::header;
 use reqwest::Client;
 use std::collections::HashMap;
 
-use crate::config::Config;
+use crate::config::{Config, SearchEngine};
 use crate::error::{Error, Result};
 use crate::tui::markdown;
 use crate::tui::markdown::Markdown;
 
 use super::api::{Answer, Api, Question};
 use super::local_storage::LocalStorage;
-use super::scraper::{ScrapedData, Scraper, SearchEngine};
+use super::scraper::{DuckDuckGo, ScrapedData, Scraper};
 
 /// Limit on concurrent requests (gets passed to `buffer_unordered`)
 const CONCURRENT_REQUESTS_LIMIT: usize = 8;
@@ -55,8 +55,9 @@ impl Search {
         let original_config = self.config.clone();
         // Temp set lucky config
         self.config.limit = 1;
-        if !self.config.duckduckgo {
-            self.config.sites.truncate(1);
+        match self.config.search_engine {
+            SearchEngine::StackExchange => self.config.sites.truncate(1),
+            _ => (),
         }
         // Run search with temp config
         let result = self.search().await;
@@ -81,17 +82,15 @@ impl Search {
 
     /// Search using the configured search engine
     pub async fn search(&self) -> Result<Vec<Question<String>>> {
-        if self.config.duckduckgo {
-            self.search_by_engine(SearchEngine::DuckDuckGo).await
-        } else {
-            // TODO after duckduck go finished, refactor to _not_ thread this limit, its unnecessary
-            self.parallel_search_advanced().await
+        match self.config.search_engine {
+            SearchEngine::DuckDuckGo => self.search_by_scraper(DuckDuckGo).await,
+            SearchEngine::StackExchange => self.parallel_search_advanced().await,
         }
     }
 
     /// Search query at duckduckgo and then fetch the resulting questions from SE.
-    async fn search_by_engine(&self, search_engine: impl Scraper) -> Result<Vec<Question<String>>> {
-        let url = search_engine.get_url(&self.query, self.sites.values());
+    async fn search_by_scraper(&self, scraper: impl Scraper) -> Result<Vec<Question<String>>> {
+        let url = scraper.get_url(&self.query, self.sites.values());
         let html = Client::new()
             .get(url)
             .header(header::USER_AGENT, USER_AGENT)
@@ -99,7 +98,7 @@ impl Search {
             .await?
             .text()
             .await?;
-        let data = search_engine.parse(&html, &self.sites, self.config.limit)?;
+        let data = scraper.parse(&html, &self.sites, self.config.limit)?;
         self.parallel_questions(data).await
     }
 

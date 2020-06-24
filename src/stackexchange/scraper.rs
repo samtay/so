@@ -10,10 +10,6 @@ use crate::error::{Error, Result};
 /// DuckDuckGo URL
 const DUCKDUCKGO_URL: &str = "https://duckduckgo.com";
 
-pub enum SearchEngine {
-    DuckDuckGo,
-}
-
 // Is question_id unique across all sites? If not, then this edge case is
 // unaccounted for when sorting.
 //
@@ -40,28 +36,7 @@ pub trait Scraper {
         I: IntoIterator<Item = &'a String>;
 }
 
-impl Scraper for SearchEngine {
-    fn parse(
-        &self,
-        html: &str,
-        sites: &HashMap<String, String>,
-        limit: u16,
-    ) -> Result<ScrapedData> {
-        match &self {
-            Self::DuckDuckGo => DuckDuckGo.parse(html, sites, limit),
-        }
-    }
-    fn get_url<'a, I>(&self, query: &str, sites: I) -> Url
-    where
-        I: IntoIterator<Item = &'a String>,
-    {
-        match &self {
-            Self::DuckDuckGo => DuckDuckGo.get_url(query, sites),
-        }
-    }
-}
-
-struct DuckDuckGo;
+pub struct DuckDuckGo;
 
 impl Scraper for DuckDuckGo {
     /// Parse (site, question_id) pairs out of duckduckgo search results html

@@ -18,6 +18,7 @@ pub fn get_opts() -> Result<Opts> {
     let config = config::user_config()?;
     let limit = &config.limit.to_string();
     let sites = &config.sites.join(";");
+    let engine = &config.search_engine.to_string();
     let matches = App::new("so")
         .setting(AppSettings::ColoredHelp)
         .version(clap::crate_version!())
@@ -38,6 +39,7 @@ pub fn get_opts() -> Result<Opts> {
                 .long("set-api-key")
                 .number_of_values(1)
                 .takes_value(true)
+                .value_name("key")
                 .help("Set StackExchange API key"),
         )
         .arg(
@@ -48,6 +50,7 @@ pub fn get_opts() -> Result<Opts> {
                 .number_of_values(1)
                 .takes_value(true)
                 .default_value(sites)
+                .value_name("site-code")
                 .help("StackExchange site code to search"),
         )
         .arg(
@@ -57,7 +60,8 @@ pub fn get_opts() -> Result<Opts> {
                 .number_of_values(1)
                 .takes_value(true)
                 .default_value(limit)
-                .validator(|s| s.parse::<u32>().map_err(|e| e.to_string()).map(|_| ()))
+                .value_name("int")
+                .validator(|s| s.parse::<u32>().map(|_| ()).map_err(|e| e.to_string()))
                 .help("Question limit"),
         )
         .arg(
@@ -79,30 +83,22 @@ pub fn get_opts() -> Result<Opts> {
                 .required_unless_one(&["list-sites", "update-sites", "set-api-key"]),
         )
         .arg(
-            Arg::with_name("duckduckgo")
-                .long("duckduckgo")
-                .help("Use DuckDuckGo as a search engine"),
-        )
-        .arg(
-            Arg::with_name("no-duckduckgo")
-                .long("no-duckduckgo")
-                .help("Disable duckduckgo")
-                .conflicts_with("duckduckgo")
-                .hidden(!config.duckduckgo),
+            Arg::with_name("search-engine")
+                .long("search-engine")
+                .short("e")
+                .number_of_values(1)
+                .takes_value(true)
+                .default_value(engine)
+                .value_name("engine")
+                .possible_values(&["duckduckgo", "stackexchange"])
+                .help("Use specified search engine")
+                .next_line_help(true),
         )
         .get_matches();
     let lucky = match (matches.is_present("lucky"), matches.is_present("no-lucky")) {
         (true, _) => true,
         (_, true) => false,
         _ => config.lucky,
-    };
-    let duckduckgo = match (
-        matches.is_present("duckduckgo"),
-        matches.is_present("no-duckduckgo"),
-    ) {
-        (true, _) => true,
-        (_, true) => false,
-        _ => config.duckduckgo,
     };
     Ok(Opts {
         list_sites: matches.is_present("list-sites"),
@@ -114,6 +110,7 @@ pub fn get_opts() -> Result<Opts> {
         config: Config {
             // these unwraps are safe via clap default values & validators
             limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),
+            search_engine: serde_yaml::from_str(matches.value_of("search-engine").unwrap())?,
             sites: matches
                 .values_of("site")
                 .unwrap()
@@ -126,7 +123,6 @@ pub fn get_opts() -> Result<Opts> {
                 .map(String::from)
                 .or(config.api_key),
             lucky,
-            duckduckgo,
         },
     })
 }

@@ -1,5 +1,6 @@
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
@@ -8,12 +9,37 @@ use crate::error::{Error, Result};
 use crate::utils;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")] // TODO test this
+pub enum SearchEngine {
+    DuckDuckGo,
+    //Google,
+    StackExchange,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
 pub struct Config {
     pub api_key: Option<String>,
     pub limit: u16,
     pub lucky: bool,
     pub sites: Vec<String>,
-    pub duckduckgo: bool,
+    pub search_engine: SearchEngine,
+}
+
+impl fmt::Display for SearchEngine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match &self {
+            SearchEngine::DuckDuckGo => "duckduckgo",
+            SearchEngine::StackExchange => "stackexchange",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl Default for SearchEngine {
+    fn default() -> Self {
+        SearchEngine::DuckDuckGo
+    }
 }
 
 // TODO make a friender config file, like the colors.toml below
@@ -24,7 +50,7 @@ impl Default for Config {
             limit: 20,
             lucky: true,
             sites: vec![String::from("stackoverflow")],
-            duckduckgo: true,
+            search_engine: SearchEngine::default(),
         }
     }
 }
