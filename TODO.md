@@ -1,5 +1,10 @@
 # TODO
 
+1. Use trust to make cross platform binaries
+2. Make an example GIF
+3. Shore up the README
+4. Add license file
+
 ### Endless future improvements for the TUI
 3. Small text at bottom with '?' to bring up key mapping dialog
 1. Init with smaller layout depending on initial screen size.
@@ -30,9 +35,6 @@ BLOCK_INDICATORS = (
     'network which appear to be in violation of the <a href="//www.google.com/policies/terms/">Terms of Service'
 )
 ```
-
-#### distribution
-1. oh game over [dawg](https://github.com/japaric/trust)
 
 #### ideas
 5. Add sort option, e.g. relevance|votes|date

@@ -1805,7 +1805,7 @@ checksum = "c7cb5678e1615754284ec264d9bb5b4c27d2018577fd90ac0ceb578591ed5ee4"
 
 [[package]]
 name = "so"
-version = "0.1.0"
+version = "0.3.1"
 dependencies = [
  "clap",
  "crossterm",
