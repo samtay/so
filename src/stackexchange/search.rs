@@ -23,6 +23,7 @@ const USER_AGENT: &str =
 
 /// This structure provides methods to search queries and get StackExchange
 /// questions/answers in return.
+// TODO this really needs a better name...
 #[derive(Clone)]
 pub struct Search {
     api: Api,
@@ -89,7 +90,7 @@ impl Search {
     }
 
     /// Search query at duckduckgo and then fetch the resulting questions from SE.
-    async fn search_by_engine(&self, search_engine: SearchEngine) -> Result<Vec<Question<String>>> {
+    async fn search_by_engine(&self, search_engine: impl Scraper) -> Result<Vec<Question<String>>> {
         let url = search_engine.get_url(&self.query, self.sites.values());
         let html = Client::new()
             .get(url)

@@ -10,7 +10,6 @@ use crate::error::{Error, Result};
 /// DuckDuckGo URL
 const DUCKDUCKGO_URL: &str = "https://duckduckgo.com";
 
-// TODO Should there be separate Unit-type structs for each one? With separate implementations?
 pub enum SearchEngine {
     DuckDuckGo,
 }
@@ -29,6 +28,7 @@ pub struct ScrapedData {
     pub ordering: HashMap<String, usize>,
 }
 
+// TODO add this type system limitation to blog post
 pub trait Scraper {
     /// Parse data from search results html
     fn parse(&self, html: &str, sites: &HashMap<String, String>, limit: u16)
@@ -48,7 +48,7 @@ impl Scraper for SearchEngine {
         limit: u16,
     ) -> Result<ScrapedData> {
         match &self {
-            SearchEngine::DuckDuckGo => parse_duckduckgo(html, sites, limit),
+            Self::DuckDuckGo => DuckDuckGo.parse(html, sites, limit),
         }
     }
     fn get_url<'a, I>(&self, query: &str, sites: I) -> Url
@@ -56,64 +56,103 @@ impl Scraper for SearchEngine {
         I: IntoIterator<Item = &'a String>,
     {
         match &self {
-            SearchEngine::DuckDuckGo => duckduckgo_url(query, sites),
+            Self::DuckDuckGo => DuckDuckGo.get_url(query, sites),
         }
     }
 }
 
-/// Parse (site, question_id) pairs out of duckduckgo search results html
-// TODO Benchmark this. It would likely be faster to use regex on the decoded url.
-// TODO pull out parts that are composable across different engines
-fn parse_duckduckgo<'a>(
-    html: &'a str,
-    sites: &'a HashMap<String, String>,
-    limit: u16,
-) -> Result<ScrapedData> {
-    let fragment = Html::parse_document(html);
-    let anchors = Selector::parse("a.result__a").unwrap();
-    let mut question_ids: HashMap<String, Vec<String>> = HashMap::new();
-    let mut ordering: HashMap<String, usize> = HashMap::new();
-    let mut count = 0;
-    for anchor in fragment.select(&anchors) {
-        let url = anchor
-            .value()
-            .attr("href")
-            .ok_or_else(|| Error::ScrapingError("Anchor with no href".to_string()))
-            .map(|href| percent_decode_str(href).decode_utf8_lossy().into_owned())?;
-        sites
-            .iter()
-            .find_map(|(site_code, site_url)| {
-                let id = question_url_to_id(site_url, &url)?;
-                ordering.insert(id.to_owned(), count);
-                match question_ids.entry(site_code.to_owned()) {
-                    Entry::Occupied(mut o) => o.get_mut().push(id),
-                    Entry::Vacant(o) => {
-                        o.insert(vec![id]);
+struct DuckDuckGo;
+
+impl Scraper for DuckDuckGo {
+    /// Parse (site, question_id) pairs out of duckduckgo search results html
+    // TODO Benchmark this. It would likely be faster to use regex on the decoded url.
+    // TODO pull out parts that are composable across different engines
+    fn parse(
+        &self,
+        html: &str,
+        sites: &HashMap<String, String>,
+        limit: u16,
+    ) -> Result<ScrapedData> {
+        let fragment = Html::parse_document(html);
+        let anchors = Selector::parse("a.result__a").unwrap();
+        let mut question_ids: HashMap<String, Vec<String>> = HashMap::new();
+        let mut ordering: HashMap<String, usize> = HashMap::new();
+        let mut count = 0;
+        for anchor in fragment.select(&anchors) {
+            let url = anchor
+                .value()
+                .attr("href")
+                .ok_or_else(|| Error::ScrapingError("Anchor with no href".to_string()))
+                .map(|href| percent_decode_str(href).decode_utf8_lossy().into_owned())?;
+            sites
+                .iter()
+                .find_map(|(site_code, site_url)| {
+                    let id = question_url_to_id(site_url, &url)?;
+                    ordering.insert(id.to_owned(), count);
+                    match question_ids.entry(site_code.to_owned()) {
+                        Entry::Occupied(mut o) => o.get_mut().push(id),
+                        Entry::Vacant(o) => {
+                            o.insert(vec![id]);
+                        }
                     }
-                }
-                count += 1;
-                Some(())
+                    count += 1;
+                    Some(())
+                })
+                .ok_or_else(|| {
+                    Error::ScrapingError(
+                        "Duckduckgo returned results outside of SE network".to_string(),
+                    )
+                })?;
+            if count >= limit as usize {
+                break;
+            }
+        }
+        // It doesn't seem possible for DDG to return no results, so assume this is
+        // a bad user agent
+        if count == 0 {
+            Err(Error::ScrapingError(String::from(
+                "DuckDuckGo blocked this request",
+            )))
+        } else {
+            Ok(ScrapedData {
+                question_ids,
+                ordering,
             })
-            .ok_or_else(|| {
-                Error::ScrapingError(
-                    "Duckduckgo returned results outside of SE network".to_string(),
-                )
-            })?;
-        if count >= limit as usize {
-            break;
         }
     }
-    // It doesn't seem possible for DDG to return no results, so assume this is
-    // a bad user agent
-    if count == 0 {
-        Err(Error::ScrapingError(String::from(
-            "DuckDuckGo blocked this request",
-        )))
-    } else {
-        Ok(ScrapedData {
-            question_ids,
-            ordering,
-        })
+
+    /// Creates duckduckgo search url given sites and query
+    /// See https://duckduckgo.com/params for more info
+    fn get_url<'a, I>(&self, query: &str, sites: I) -> Url
+    where
+        I: IntoIterator<Item = &'a String>,
+    {
+        let mut q = String::new();
+        //  Restrict to sites
+        q.push('(');
+        q.push_str(
+            sites
+                .into_iter()
+                .map(|site| String::from("site:") + site)
+                .collect::<Vec<_>>()
+                .join(" OR ")
+                .as_str(),
+        );
+        q.push_str(") ");
+        //  Search terms
+        q.push_str(
+            query
+                .trim_end_matches('?')
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .as_str(),
+        );
+        Url::parse_with_params(
+            DUCKDUCKGO_URL,
+            &[("q", q.as_str()), ("kz", "-1"), ("kh", "-1")],
+        )
+        .unwrap()
     }
 }
 
@@ -132,40 +171,6 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
     Some(input[0..end].to_string())
 }
 
-/// Creates duckduckgo search url given sites and query
-/// See https://duckduckgo.com/params for more info
-fn duckduckgo_url<'a, I>(query: &str, sites: I) -> Url
-where
-    I: IntoIterator<Item = &'a String>,
-{
-    let mut q = String::new();
-    //  Restrict to sites
-    q.push('(');
-    q.push_str(
-        sites
-            .into_iter()
-            .map(|site| String::from("site:") + site)
-            .collect::<Vec<_>>()
-            .join(" OR ")
-            .as_str(),
-    );
-    q.push_str(") ");
-    //  Search terms
-    q.push_str(
-        query
-            .trim_end_matches('?')
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-            .as_str(),
-    );
-    Url::parse_with_params(
-        DUCKDUCKGO_URL,
-        &[("q", q.as_str()), ("kz", "-1"), ("kh", "-1")],
-    )
-    .unwrap()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,7 +183,7 @@ mod tests {
             String::from("unix.stackexchange.com"),
         ];
         assert_eq!(
-            duckduckgo_url(q, &sites).as_str(),
+            DuckDuckGo.get_url(q, &sites).as_str(),
             String::from(
                 "https://duckduckgo.com/\
                 ?q=%28site%3Astackoverflow.com+OR+site%3Aunix.stackexchange.com%29\

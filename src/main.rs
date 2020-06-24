@@ -82,19 +82,19 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     }
 
     if let Some(q) = opts.query {
-        let mut se = Search::new(config, ls, q);
+        let mut search = Search::new(config, ls, q);
         if lucky {
-            let md = se.search_lucky().await?;
+            let md = search.search_lucky().await?;
             skin.print_text(&md);
             skin.print_text("\nPress **[SPACE]** to see more results, or any other key to exit");
             // Kick off the rest of the search in the background
-            let qs = task::spawn(async move { se.search_md().await });
+            let qs = task::spawn(async move { search.search_md().await });
             if !utils::wait_for_char(' ')? {
                 return Ok(None);
             }
             return Ok(Some(qs.await.unwrap()?));
         } else {
-            return Ok(Some(se.search_md().await?));
+            return Ok(Some(search.search_md().await?));
         }
     }
     Ok(None)
