@@ -55,9 +55,8 @@ impl Search {
         let original_config = self.config.clone();
         // Temp set lucky config
         self.config.limit = 1;
-        match self.config.search_engine {
-            SearchEngine::StackExchange => self.config.sites.truncate(1),
-            _ => (),
+        if let SearchEngine::StackExchange = self.config.search_engine {
+            self.config.sites.truncate(1);
         }
         // Run search with temp config
         let result = self.search().await;
