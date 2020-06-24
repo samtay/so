@@ -41,6 +41,9 @@ pub struct Question<S> {
     #[serde(rename = "question_id")]
     pub id: u32,
     pub score: i32,
+    #[serde(default = "Vec::new")]
+    // N.B. empty vector default needed because questions endpoint cannot filter
+    // answers >= 1
     pub answers: Vec<Answer<S>>,
     pub title: String,
     #[serde(rename = "body_markdown")]
@@ -91,7 +94,10 @@ impl Api {
             .await?
             .json::<ResponseWrapper<Question<String>>>()
             .await?
-            .items;
+            .items
+            .into_iter()
+            .filter(|q| !q.answers.is_empty())
+            .collect();
         Ok(Self::preprocess(qs))
     }
 
