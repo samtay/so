@@ -51,7 +51,7 @@ pub fn get_opts() -> Result<Opts> {
                 .takes_value(true)
                 .default_value(sites)
                 .value_name("site-code")
-                .help("StackExchange site code to search"),
+                .help("StackExchange site to search"),
         )
         .arg(
             Arg::with_name("limit")

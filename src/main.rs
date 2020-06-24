@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     // Markdown styles (outside of TUI)
     let mut skin = MadSkin::default();
     skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
-    skin.code_block.set_fgbg(Color::Cyan, termimad::gray(20));
+    skin.code_block.set_fg(Color::Cyan);
     let mut print_error = mk_print_error(&skin);
 
     // Tokio runtime
