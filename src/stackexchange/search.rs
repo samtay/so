@@ -26,7 +26,6 @@ const USER_AGENT: &str =
 #[derive(Clone)]
 pub struct Search {
     api: Api,
-    client: Client,
     config: Config,
     query: String,
     sites: HashMap<String, String>,
@@ -34,12 +33,10 @@ pub struct Search {
 
 impl Search {
     pub fn new(config: Config, local_storage: LocalStorage, query: String) -> Self {
-        let client = Client::new();
         let api = Api::new(config.api_key.clone());
         let sites = local_storage.get_urls(&config.sites);
         Search {
             api,
-            client,
             config,
             query,
             sites,
@@ -94,8 +91,7 @@ impl Search {
     /// Search query at duckduckgo and then fetch the resulting questions from SE.
     async fn search_by_engine(&self, search_engine: SearchEngine) -> Result<Vec<Question<String>>> {
         let url = search_engine.get_url(&self.query, self.sites.values());
-        let html = self
-            .client
+        let html = Client::new()
             .get(url)
             .header(header::USER_AGENT, USER_AGENT)
             .send()
