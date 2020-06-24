@@ -1,8 +1,5 @@
 # TODO
 
-### v0.3.0
-1. Keep relevance ordering !!!
-
 ### v0.3.1
 1. Much of the code can be reused for google:
     * parsing href after `"url="` (similar to uddg)
@@ -14,9 +11,6 @@
    - stackexchange
      - api
      - scraper
-
-
-
 
 ### Endless future improvements for the TUI
 1. Init with smaller layout depending on initial screen size.
@@ -32,17 +26,15 @@
 ### resources for later
 
 #### scraping
-6. Google stuff [scraping with reqwest](https://rust-lang-nursery.github.io/rust-cookbook/web/scraping.html))
-
 ```python
-# if necessary, choose one of these to mimic browswer request
+# if necessary, choose one of these to mimic browser request
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
-               'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
-                              'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
-                                             ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) '
-                                                             'Chrome/19.0.1084.46 Safari/536.5'),
-                                                                            ('Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46'
-                                                                                            'Safari/536.5'), )
+'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
+'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
+('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) '
+'Chrome/19.0.1084.46 Safari/536.5'),
+('Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46'
+'Safari/536.5'), )
 
 # checks for search engine blocks
 BLOCK_INDICATORS = (

@@ -21,7 +21,10 @@
 [x] Support multiple --site args & searches
 
 ### v0.3.0
-[ ] Add duckduckgo scraper
+[x] Add duckduckgo scraper
+
+### v0.3.1
+[ ] Add google scraper
 
 ### at some point
 [ ] use trust to distrubute app binaries

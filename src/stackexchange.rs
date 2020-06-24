@@ -44,7 +44,6 @@ const USER_AGENT: &str =
 
 /// This structure allows interacting with parts of the StackExchange
 /// API, using the `Config` struct to determine certain API settings and options.
-// TODO should my se structs have &str instead of String?
 #[derive(Clone)]
 pub struct StackExchange {
     client: Client,
@@ -79,7 +78,6 @@ pub struct Answer<S> {
 /// Represents a StackExchange question with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/question)
 // TODO container over answers should be generic iterator
-// TODO let body be a generic that implements Display!
 #[derive(Clone, Deserialize, Debug)]
 pub struct Question<S> {
     #[serde(rename = "question_id")]
@@ -95,6 +93,20 @@ pub struct Question<S> {
 #[derive(Deserialize, Debug)]
 struct ResponseWrapper<T> {
     items: Vec<T>,
+}
+
+// Iss question_id unique across all sites? If not, then this edge case is
+// unaccounted for when sorting.
+//
+// If this is ever an issue, it wouldn't be too hard to account for this; just
+// keep track of site in the `ordering` field and also return site from the
+// spawned per-site tasks.
+#[derive(Debug, PartialEq)]
+struct ScrapedData {
+    /// Mapping of site code to question ids
+    question_ids: HashMap<String, Vec<String>>,
+    /// Mapping of question_id to its ordinal place in search results
+    ordering: HashMap<String, usize>,
 }
 
 impl StackExchange {
@@ -164,17 +176,18 @@ impl StackExchange {
             .await?
             .text()
             .await?;
-        let ids = parse_questions_from_ddg_html(&html, &self.sites, self.config.limit)?;
-        self.se_questions(ids).await
+        let data = parse_questions_from_ddg_html(&html, &self.sites, self.config.limit)?;
+        self.se_questions(data).await
     }
 
     /// Parallel searches against the SE question endpoint across the sites in `ids`.
     // TODO I'm sure there is a way to DRY the se_question & se_search_advanced functions
-    async fn se_questions(
-        &self,
-        ids: HashMap<String, Vec<String>>,
-    ) -> Result<Vec<Question<String>>> {
-        futures::stream::iter(ids)
+    async fn se_questions(&self, data: ScrapedData) -> Result<Vec<Question<String>>> {
+        let ScrapedData {
+            question_ids,
+            ordering,
+        } = data;
+        futures::stream::iter(question_ids)
             .map(|(site, ids)| {
                 let clone = self.clone();
                 tokio::spawn(async move {
@@ -189,8 +202,8 @@ impl StackExchange {
             .map(|r| r.map_err(Error::from).and_then(|x| x))
             .collect::<Result<Vec<Vec<_>>>>()
             .map(|v| {
-                let qs: Vec<Question<String>> = v.into_iter().flatten().collect();
-                // TODO sort by original ordering !
+                let mut qs: Vec<Question<String>> = v.into_iter().flatten().collect();
+                qs.sort_unstable_by_key(|q| ordering.get(&q.id.to_string()).unwrap());
                 qs
             })
     }
@@ -395,7 +408,7 @@ impl LocalStorage {
     }
 
     // TODO is this HM worth it? Probably only will ever have < 10 site codes to search...
-    // TODO store this as Option<HM> on self if other methods use it...
+    // maybe store this as Option<HM> on self if other methods use it...
     pub async fn find_invalid_site<'a, 'b>(
         &'b self,
         site_codes: &'a [String],
@@ -467,16 +480,16 @@ where
 }
 
 /// Parse (site, question_id) pairs out of duckduckgo search results html
-/// TODO currently hashmap {site: [qids]} BUT we should maintain relevance order !
-///      maybe this is as simple as a HashMap {qid: ordinal}
+// TODO Benchmark this. It would likely be faster to use regex on the decoded url.
 fn parse_questions_from_ddg_html<'a>(
     html: &'a str,
     sites: &'a HashMap<String, String>,
     limit: u16,
-) -> Result<HashMap<String, Vec<String>>> {
+) -> Result<ScrapedData> {
     let fragment = Html::parse_document(html);
     let anchors = Selector::parse("a.result__a").unwrap();
-    let mut qids: HashMap<String, Vec<String>> = HashMap::new();
+    let mut question_ids: HashMap<String, Vec<String>> = HashMap::new();
+    let mut ordering: HashMap<String, usize> = HashMap::new();
     let mut count = 0;
     for anchor in fragment.select(&anchors) {
         let url = anchor
@@ -488,7 +501,8 @@ fn parse_questions_from_ddg_html<'a>(
             .iter()
             .find_map(|(site_code, site_url)| {
                 let id = question_url_to_id(site_url, &url)?;
-                match qids.entry(site_code.to_owned()) {
+                ordering.insert(id.to_owned(), count);
+                match question_ids.entry(site_code.to_owned()) {
                     Entry::Occupied(mut o) => o.get_mut().push(id),
                     Entry::Vacant(o) => {
                         o.insert(vec![id]);
@@ -513,7 +527,10 @@ fn parse_questions_from_ddg_html<'a>(
             "DuckDuckGo blocked this request",
         )))
     } else {
-        Ok(qids)
+        Ok(ScrapedData {
+            question_ids,
+            ordering,
+        })
     }
 }
 
@@ -532,8 +549,8 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
     Some(input[0..end].to_string())
 }
 
-// TODO figure out a query that returns no results so that I can test it and differentiate it from
-// a blocked request
+// TODO find a query that returns no results so that I can test it and
+// differentiate it from a blocked request
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -577,15 +594,27 @@ mod tests {
         .into_iter()
         .map(|(k, v)| (k.to_string(), v.to_string()))
         .collect::<HashMap<String, String>>();
-        let mut expected_question_ids = HashMap::new();
-        expected_question_ids.insert(
-            "stackoverflow".to_string(),
-            vec!["11828270".to_string(), "9171356".to_string()],
-        );
-        expected_question_ids.insert("askubuntu".to_string(), vec!["24406".to_string()]);
+        let expected_scraped_data = ScrapedData {
+            question_ids: vec![
+                ("stackoverflow", vec!["11828270", "9171356"]),
+                ("askubuntu", vec!["24406"]),
+            ]
+            .into_iter()
+            .map(|(k, v)| {
+                (
+                    k.to_string(),
+                    v.into_iter().map(|s| s.to_string()).collect(),
+                )
+            })
+            .collect(),
+            ordering: vec![("11828270", 0), ("9171356", 2), ("24406", 1)]
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v))
+                .collect(),
+        };
         assert_eq!(
             parse_questions_from_ddg_html(html, &sites, 3).unwrap(),
-            expected_question_ids
+            expected_scraped_data
         );
     }
 
