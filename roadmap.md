@@ -27,13 +27,11 @@
 [x] Add google scraper
 
 ### at some point
-[ ] look up how to add `debug!` macros; will help troubleshooting blocked requests
-[ ] use trust to distrubute app binaries
-[ ] ask SE forums if I should bundle my api-key? (if so use an env var macro)
+[ ] look up how to add logging `debug!` macros; will help troubleshooting blocked requests
+[x] use trust to distrubute app binaries
 [ ] allow new queries from TUI, e.g. hit `/` for a prompt
 [ ] or `/` searches current q/a
-[ ] clean up dingleberries in error.rs and term.rs ; only keep whats actually ergonomic
-[ ] ask legal@stackoverflow.com for permission to logo stackoverflow/stackexchange in readme
+[ ] clean up dingleberries in error.rs and term.rs ; only keep what's actually ergonomic
 [ ] add duckduckgo logo to readme
 [ ] per platform package mgmt
 [ ] more testing

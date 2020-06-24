@@ -47,7 +47,7 @@ impl Default for SearchEngine {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            api_key: None,
+            api_key: Some(String::from("8o9g7WcfwnwbB*Qp4VsGsw((")),
             limit: 20,
             lucky: true,
             sites: vec![String::from("stackoverflow")],

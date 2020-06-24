@@ -176,6 +176,7 @@ fn parse_with_selector(
     })
 }
 
+// TODO also allow /q/
 /// For example
 /// ```
 /// let id = "stackoverflow.com";
@@ -191,6 +192,7 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
     Some(input[0..end].to_string())
 }
 
+// TODO test with google/parsing-q.html
 #[cfg(test)]
 mod tests {
     use super::*;
