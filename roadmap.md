@@ -24,16 +24,16 @@
 [x] Add duckduckgo scraper
 
 ### v0.3.1
-[ ] Add google scraper
+[x] Add google scraper
 
 ### at some point
+[ ] look up how to add `debug!` macros; will help troubleshooting blocked requests
 [ ] use trust to distrubute app binaries
 [ ] ask SE forums if I should bundle my api-key? (if so use an env var macro)
 [ ] allow new queries from TUI, e.g. hit `/` for a prompt
 [ ] or `/` searches current q/a
-[ ] clean up error.rs and term.rs ; only keep whats actually ergonomic
+[ ] clean up dingleberries in error.rs and term.rs ; only keep whats actually ergonomic
 [ ] ask legal@stackoverflow.com for permission to logo stackoverflow/stackexchange in readme
 [ ] add duckduckgo logo to readme
 [ ] per platform package mgmt
 [ ] more testing
-[ ] maybe add google engine too. but fuck google.

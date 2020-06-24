@@ -1,18 +1,9 @@
 # TODO
 
-### v0.3.1
-1. Much of the code can be reused for google:
-    * parsing href after `"url="` (similar to uddg)
-    * formatting `(site:stackoverflow.com OR site:unix.stackexchange.com) what is linux`
-  So make a `Scraper` trait and implement it for DDG & Google. Then
-  `stackexchange` can just code against `Scraper` and choose based on
-  `--search-engine | -e' argument`
-
 ### Endless future improvements for the TUI
-1. Init with smaller layout depending on initial screen size.
-2. Maybe cli `--auto-resize` option.
 3. Small text at bottom with '?' to bring up key mapping dialog
-4. Clean up! remove dupe between ListView and MdView by making a common trait
+1. Init with smaller layout depending on initial screen size.
+2. Maybe cli `--auto-resize` option that changes layouts at breakpoints.
 5. Maybe **[ESC]** cycles layout in the opposite direction? And stops at
    BothColumns?
 6. Allow cycling through themes, either found in `~/.config/so/colors/*.toml`
@@ -23,7 +14,7 @@
 
 #### scraping
 ```python
-# if necessary, choose one of these to mimic browser request
+# if necessary, cycle through these to mimic browser request
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
 'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',

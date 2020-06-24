@@ -90,7 +90,7 @@ pub fn get_opts() -> Result<Opts> {
                 .takes_value(true)
                 .default_value(engine)
                 .value_name("engine")
-                .possible_values(&["duckduckgo", "stackexchange"])
+                .possible_values(&["duckduckgo", "google", "stackexchange"])
                 .help("Use specified search engine")
                 .next_line_help(true),
         )

@@ -12,7 +12,7 @@ use crate::utils;
 #[serde(rename_all = "lowercase")] // TODO test this
 pub enum SearchEngine {
     DuckDuckGo,
-    //Google,
+    Google,
     StackExchange,
 }
 
@@ -30,6 +30,7 @@ impl fmt::Display for SearchEngine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match &self {
             SearchEngine::DuckDuckGo => "duckduckgo",
+            SearchEngine::Google => "google",
             SearchEngine::StackExchange => "stackexchange",
         };
         write!(f, "{}", s)

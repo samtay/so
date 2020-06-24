@@ -11,7 +11,7 @@ use crate::tui::markdown::Markdown;
 
 use super::api::{Answer, Api, Question};
 use super::local_storage::LocalStorage;
-use super::scraper::{DuckDuckGo, ScrapedData, Scraper};
+use super::scraper::{DuckDuckGo, Google, ScrapedData, Scraper};
 
 /// Limit on concurrent requests (gets passed to `buffer_unordered`)
 const CONCURRENT_REQUESTS_LIMIT: usize = 8;
@@ -84,6 +84,7 @@ impl Search {
     pub async fn search(&self) -> Result<Vec<Question<String>>> {
         match self.config.search_engine {
             SearchEngine::DuckDuckGo => self.search_by_scraper(DuckDuckGo).await,
+            SearchEngine::Google => self.search_by_scraper(Google).await,
             SearchEngine::StackExchange => self.parallel_search_advanced().await,
         }
     }
