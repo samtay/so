@@ -6,7 +6,8 @@
   [installation](https://github.com/casey/just) (this is also a good example of github actions).
 2. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 3. Benchmark parsing. Probaly way faster to use regex to find question IDs
-   within URLs (or the entire doc).
+   within URLs (or *gasp* the entire doc).
+4. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 
 ### bugs
 1. Need to also allow /q/ in search results in addition to /questions/

@@ -28,9 +28,10 @@ $ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
 
 ### release binaries
 The quickest installation method is to download the appropriate
-binary from the [release artifacts](TODO link). Right now I'm only building the
-most common targets, but in theory it should be easy to add more, so if you
-don't see what you are looking for just open an issue and I can add it. Here's a
+binary from the [release artifacts](https://github.com/samtay/so/releases).
+Right now I'm only building the most common targets, but in theory it should be
+easy to add more, so if you don't see what you are looking for just open an
+issue and I can add it. Here's a
 list of the [supported
 targets](https://github.com/japaric/trust#supported-targets).  You can quickly
 install the binary for your OS with:

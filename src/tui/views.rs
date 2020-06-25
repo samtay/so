@@ -324,10 +324,8 @@ impl ViewWrapper for LayoutView {
     }
 
     fn wrap_layout(&mut self, size: Vec2) {
-        if self.layout_invalidated || self.size_invalidated {
-            self.resize(size);
-            self.relayout();
-        }
+        self.resize(size);
+        self.relayout();
         self.size_invalidated = false;
         self.layout_invalidated = false;
         self.view.layout(size);
@@ -383,6 +381,8 @@ impl LayoutView {
         self.call_on_md_views(move |v| v.resize(&width, &view_height));
     }
 
+    // TODO separate out resizing | relayout | refocus; these are separate
+    // concerns and should have their own methods of invalidation
     fn relayout(&mut self) {
         match self.layout {
             Layout::BothColumns => {
@@ -429,8 +429,8 @@ impl LayoutView {
             Layout::FullScreen => {
                 self.call_on_md_views(|v| {
                     v.show_title();
-                    v.set_take_focus(true);
                     v.hide();
+                    v.set_take_focus(true);
                     v.resize(&SizeConstraint::Full, &SizeConstraint::Full);
                 });
                 self.call_on_list_views(|v| {
