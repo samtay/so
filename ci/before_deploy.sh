@@ -4,6 +4,7 @@ set -ex
 
 main() {
     local src=$(pwd) \
+          features="--features reqwest/native-tls-vendored" \
           stage=
 
     case $TRAVIS_OS_NAME in
@@ -17,7 +18,7 @@ main() {
 
     test -f Cargo.lock || cargo generate-lockfile
 
-    cross rustc --bin so --target $TARGET --release -- -C lto
+    cross rustc $features --bin so --target $TARGET --release -- -C lto
 
     cp target/$TARGET/release/so $stage/
 

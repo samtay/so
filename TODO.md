@@ -2,6 +2,8 @@
 
 ### chores
 1. Make an example GIF
+2.  [Better](https://gist.github.com/sjparkinson/327dc78c60ab81a06c946630b4288910)
+  [installation](https://github.com/casey/just) (this is also a good example of github actions).
 2. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 3. Benchmark parsing. Probaly way faster to use regex to find question IDs
    within URLs (or the entire doc).

@@ -25,6 +25,8 @@ $ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
 ```
 
 ## installation
+
+### release binaries
 The quickest installation method is to download the appropriate
 binary from the [release artifacts](TODO link). Right now I'm only building the
 most common targets, but in theory it should be easy to add more, so if you
@@ -37,12 +39,18 @@ $ curl -LSfs https://samtay.github.io/so/install.sh | \
     sh -s -- --git samtay/so
 ```
 
-#### cargo
+### cargo
 ```
 cargo install so
 ```
 
 ## documentation
+
+### configuration
+**TODO** Document config.yml and explain where to find it.
+
+### themes
+**TODO** Explain colors.toml and explain where to find it.
 
 ### api keys
 If you want to use your own [StackExchange API
@@ -85,6 +93,7 @@ Just know that *currently* if you choose this option, and you run the `--lucky`
 prompt, you won't be able to resize the terminal window while the TUI is open.
 
 Available backends:
+
 - `termion-backend`
 - `ncurses-backend`
 - `pancurses-backend`

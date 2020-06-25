@@ -5,6 +5,7 @@ set -ex
 main() {
     local features="--features reqwest/native-tls-vendored"
     if [[ $TARGET =~ .*-freebsd ]]; then
+        # N.B. still broken
         features="--features reqwest/rustls-tls"
     fi
 
