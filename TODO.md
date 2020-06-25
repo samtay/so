@@ -2,8 +2,6 @@
 
 ### chores
 1. Make an example GIF
-2.  [Better](https://gist.github.com/sjparkinson/327dc78c60ab81a06c946630b4288910)
-  [installation](https://github.com/casey/just) (this is also a good example of github actions).
 2. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 3. Benchmark parsing. Probaly way faster to use regex to find question IDs
    within URLs (or *gasp* the entire doc).
@@ -25,6 +23,7 @@ SpannedString, and own everything...
 ### feature ideas
 - Add sort option, e.g. relevance|votes|date
 - Keep track of quota in a data file, inform user when getting close?
+- Maybe allow slimmer builds without TUI that only offer --lucky.
 
 #### Endless improvements for the TUI
 3. Small text at bottom with '?' to bring up key mapping dialog
@@ -40,10 +39,10 @@ SpannedString, and own everything...
 benefit of incorporating termimad features into a cursive view will not be felt.
 But, this is changing [soon](https://meta.stackexchange.com/q/348746).
 
-
 ### resources for later
 - [Trust example](https://github.com/badboy/signify-rs)
 - [Github Actions example](https://github.com/extrawurst/gitui)
+- [another GA example](https://github.com/casey/just)
 - [logging example](https://deterministic.space/rust-cli-tips.html)
 - [PKGBUILD example](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=gitui) + openssl dep
 - More mock user agents

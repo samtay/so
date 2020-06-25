@@ -29,16 +29,19 @@ $ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
 ### release binaries
 The quickest installation method is to download the appropriate
 binary from the [release artifacts](https://github.com/samtay/so/releases).
+You can quickly
+install the binary for common targets (Linux, MacOS, Windows) with:
+```shell
+curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh | bash -s -- --to /usr/local/bin
+```
+
 Right now I'm only building the most common targets, but in theory it should be
 easy to add more, so if you don't see what you are looking for just open an
 issue and I can add it. Here's a
 list of the [supported
-targets](https://github.com/japaric/trust#supported-targets).  You can quickly
-install the binary for your OS with:
-```shell
-$ curl -LSfs https://samtay.github.io/so/install.sh | \
-    sh -s -- --git samtay/so
-```
+targets](https://github.com/japaric/trust#supported-targets). If you don't know
+what you need, you can install [rustc](https://www.rust-lang.org/tools/install)
+and open an issue with the output of `rustc -Vv | grep host | cut -d' ' -f2`.
 
 ### cargo
 ```
@@ -46,12 +49,35 @@ cargo install so
 ```
 
 ## documentation
+The configuration files for e.g. a user `Alice` can be found in the following
+directories:
 
-### configuration
-**TODO** Document config.yml and explain where to find it.
+- Linux: `/home/alice/.config/so`
+- Windows: `C:\Users\Alice\AppData\Roaming\Sam Tay\so`
+- MacOS: `/Users/Alice/Library/Application Support/io.Sam-Tay.so`
+
+### defaults
+The `config.yml` file let's you specify your CLI defaults. So if you dislike the
+lucky prompt, always search serverfault.com and unix.stackexchange.com, and
+dislike the ethics of Google, you can set your config file like this:
+```yaml
+# config.yml
+---
+api_key: ~
+limit: 10
+lucky: false
+sites:
+  - serverfault
+  - unix
+search_engine: duckduckgo
+```
+Run `so --help` to see your current defaults.
 
 ### themes
-**TODO** Explain colors.toml and explain where to find it.
+In the same directory you'll find `colors.toml` which is self-documented. The
+default theme attempts to blend in with your default terminal theme, but you can
+change it as necessary. There are a couple available themes in the
+[themes](./themes) directory.
 
 ### api keys
 If you want to use your own [StackExchange API
@@ -75,7 +101,7 @@ In particular, if you specify more than 30 sites, SE will likely ban you for a s
 ### selecting a backend
 If you're installing from source, you can choose from a number of available
 backend rendering engines. Note that the package `default` and `windows` feature
-flags do not have an ncurses dependency, for the sake of simplicity.  The
+flags do not have an ncurses dependency, for the sake of portability.  The
 default backend is [termion](https://github.com/redox-os/termion), a bindless
 library in pure Rust which seems to work quite well on Linux, MacOS, BSD, and
 Redox.  The windows backend is by default
