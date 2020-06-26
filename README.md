@@ -1,8 +1,21 @@
-[![Build Status (travis)](https://travis-ci.org/samtay/so.svg?branch=master)](https://travis-ci.org/samtay/so)
-[![Build status](https://ci.appveyor.com/api/projects/status/pu7e63f2sqq6x1iq/branch/master?svg=true)](https://ci.appveyor.com/project/samtay/so/branch/master)
+<h1 align="center">
+<img width="300px" src="assets/logo.png" />
+
+[![travis][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] ![MIT][s3]
+
+</h1>
+
+[s0]: https://travis-ci.org/samtay/so.svg?branch=master
+[l0]: https://travis-ci.org/samtay/so
+[s1]: https://ci.appveyor.com/api/projects/status/pu7e63f2sqq6x1iq/branch/master?svg=true
+[l1]: https://ci.appveyor.com/project/samtay/so/branch/master
+[s2]: https://img.shields.io/crates/v/so.svg
+[l2]: https://crates.io/crates/so
+[s3]: https://img.shields.io/badge/license-MIT-blue.svg
+
+<h5 align="center">A terminal interface for StackOverflow written in Rust</h5>
 
 # so
-A terminal interface for StackOverflow.
 
 **Note**: still working out some kinks. Initial release not published just yet.
 **<Insert GIF here>**
@@ -30,10 +43,19 @@ $ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
 The quickest installation method is to download the appropriate
 binary from the [release artifacts](https://github.com/samtay/so/releases).
 You can quickly
-install the binary for common targets (Linux, MacOS, Windows) with:
+install the binary for common targets (Linux, MacOS, Windows) to directory
+`DEST` with:
 ```shell
-curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh | bash -s -- --to /usr/local/bin
+curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh | bash -s -- --to DEST
 ```
+Note: you may need extra permissions for certain paths, e.g.
+```shell
+# install to /usr/local/bin
+curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh | sudo bash -s -- --to /usr/local/bin.
+```
+And of course, you may want to `curl https://samtay.github.io/so/install.sh`
+first and make sure you're comfortable executing it. You can also view it
+[here](./docs/install.sh).
 
 Right now I'm only building the most common targets, but in theory it should be
 easy to add more, so if you don't see what you are looking for just open an
@@ -47,6 +69,9 @@ and open an issue with the output of `rustc -Vv | grep host | cut -d' ' -f2`.
 ```
 cargo install so
 ```
+
+### os packages
+Coming soon. Help appreciated!
 
 ## documentation
 The configuration files for e.g. a user `Alice` can be found in the following
