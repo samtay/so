@@ -176,23 +176,27 @@ fn parse_with_selector(
     })
 }
 
-// TODO also allow /q/
 /// For example
 /// ```
 /// let id = "stackoverflow.com";
 /// let input = "/l/?kh=-1&uddg=https://stackoverflow.com/questions/11828270/how-do-i-exit-the-vim-editor";
-/// assert_eq!(question_url_to_id(site_url, input), "11828270")
+/// assert_eq!(question_url_to_id(site_url, input), Some(String::from("11828270")))
 /// ```
+// TODO use str_prefix once its stable
+// TODO benchmark this. regex is almost undoubtably superior here
 fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
-    // TODO use str_prefix once its stable
-    let fragment = site_url.trim_end_matches('/').to_owned() + "/questions/";
-    let ix = input.find(&fragment)? + fragment.len();
-    let input = &input[ix..];
-    let end = input.find('/')?;
-    Some(input[0..end].to_string())
+    ["/questions/", "/q/"].iter().find_map(|segment| {
+        let fragment = site_url.trim_end_matches('/').to_owned() + segment;
+        let ix = input.find(&fragment)? + fragment.len();
+        let input = &input[ix..];
+        if let Some(end) = input.find('/') {
+            Some(input[0..end].to_string())
+        } else {
+            Some(input[0..].to_string())
+        }
+    })
 }
 
-// TODO test with google/parsing-q.html
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -283,6 +287,39 @@ mod tests {
     }
 
     #[test]
+    fn test_google_q_parser() {
+        let html = include_str!("../../test/google/parsing-q.html");
+        let mut sites = HashMap::new();
+        sites.insert(
+            String::from("stackoverflow"),
+            String::from("stackoverflow.com"),
+        );
+        let expected_scraped_data = ScrapedData {
+            question_ids: vec![(
+                String::from("stackoverflow"),
+                vec![
+                    String::from("3940128"),
+                    String::from("4647368"),
+                    String::from("12336105"),
+                ],
+            )]
+            .into_iter()
+            .collect(),
+            ordering: vec![
+                (String::from("3940128"), 0),
+                (String::from("4647368"), 1),
+                (String::from("12336105"), 2),
+            ]
+            .into_iter()
+            .collect(),
+        };
+        assert_eq!(
+            Google.parse(html, &sites, 3).unwrap(),
+            expected_scraped_data
+        );
+    }
+
+    #[test]
     fn test_duckduckgo_blocker() -> Result<(), String> {
         let html = include_str!("../../test/duckduckgo/bad-user-agent.html");
         let mut sites = HashMap::new();
@@ -299,12 +336,8 @@ mod tests {
         }
     }
 
-    #[test]
-    // TODO  Get a blocked request html
+    // TODO  Get blocked google request html
     // note: this may only be possible at search.rs level (with non-200 code)
-    fn test_google_blocker() -> Result<(), String> {
-        Ok(())
-    }
 
     #[test]
     fn test_question_url_to_id() {

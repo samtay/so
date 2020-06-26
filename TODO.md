@@ -8,8 +8,7 @@
 4. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 
 ### bugs
-1. Need to also allow /q/ in search results in addition to /questions/
-2.
+1.
 ```
 so --search-engine google --site stackoverflow --site askubuntu how to stop typing sudo
 ```
