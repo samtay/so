@@ -182,14 +182,21 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
         let fragment = site_url.trim_end_matches('/').to_owned() + segment;
         let ix = input.find(&fragment)? + fragment.len();
         let input = &input[ix..];
-        if let Some(end) = input.find('/') {
-            Some(input[0..end].to_string())
+        let id = if let Some(end) = input.find('/') {
+            input[0..end].to_string()
         } else {
-            Some(input[0..].to_string())
+            input[0..].to_string()
+        };
+        if id.chars().into_iter().all(|c| c.is_digit(10)) {
+            Some(id)
+        } else {
+            None
         }
     })
 }
 
+// TODO  Get blocked google request html
+// note: this may only be possible at search.rs level (with non-200 code)
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -329,17 +336,33 @@ mod tests {
         }
     }
 
-    // TODO  Get blocked google request html
-    // note: this may only be possible at search.rs level (with non-200 code)
-
     #[test]
     fn test_question_url_to_id() {
+        // Happy path
         let site_url = "stackoverflow.com";
         let input = "/l/?kh=-1&uddg=https://stackoverflow.com/questions/11828270/how-do-i-exit-the-vim-editor";
         assert_eq!(question_url_to_id(site_url, input).unwrap(), "11828270");
 
+        // Happy path with variant /q/
         let site_url = "stackoverflow.com";
-        let input = "/l/?kh=-1&uddg=https://askubuntu.com/questions/24406/how-to-close-vim-from-the-command-line";
+        let input = "/l/?kh=-1&uddg=https://stackoverflow.com/q/11828270";
+        assert_eq!(question_url_to_id(site_url, input).unwrap(), "11828270");
+
+        // Base site
+        let site_url = "unix.stackoverflow.com";
+        let input = "/l/?kh=-1&uddg=https://unix.stackoverflow.com";
         assert_eq!(question_url_to_id(site_url, input), None);
+
+        // Tagged link
+        let site_url = "meta.stackexchange.com";
+        let input =
+            "/l/?kh=-1&amp;uddg=https://meta.stackexchange.com/questions/tagged/stackexchange-tour";
+        assert_eq!(question_url_to_id(site_url, input), None);
+
+        // Different site
+        // TODO get this to pass; then test tagged.html
+        //let site_url = "meta.stackexchange.com";
+        //let input = "/l/?kh=-1&uddg=https://math.meta.stackexchange.com/q/11828270";
+        //assert_eq!(question_url_to_id(site_url, input), None);
     }
 }
