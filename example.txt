@@ -1,0 +1,13 @@
+1. so how do I exit vim
+
+2. so --site askubuntu --site unix how to use sudo without typing password
+
+  -> single col
+  -> scroll to 226
+  -> TAB
+  -> TAB
+  -> Scroll to bottom with j
+  -> Scroll up with gg
+  -> ctrl c
+
+3. so --search-engine stackexchange how to reverse a list in Python

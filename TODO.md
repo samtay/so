@@ -8,6 +8,9 @@
 4. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 
 ### bugs
+0. Another parser bug: some links return /questions/tagged/; need to make sure
+   we only select digits. Hello regex. (use test/duckduckgo/tagged.html to write
+   a new test).
 1.
 ```
 so --search-engine google --site stackoverflow --site askubuntu how to stop typing sudo
@@ -18,6 +21,9 @@ thread '<unnamed>' panicked at 'assertion failed: value_pos >= source_pos', /hom
 ```
 So maybe the md parser should just build its own source for
 SpannedString, and own everything...
+2. Searching site:meta.stackexchange.com also returns results from
+   math.meta.stackexchange.com; this will lead to requesting question IDs that
+   don't exist. Need to improve parser to account for this.
 
 ### feature ideas
 - Add sort option, e.g. relevance|votes|date
@@ -25,6 +31,7 @@ SpannedString, and own everything...
 - Maybe allow slimmer builds without TUI that only offer --lucky.
 
 #### Endless improvements for the TUI
+1. Add Shift+TAB to cycle focus backwards (just add CirculularFocus wrapper)
 3. Small text at bottom with '?' to bring up key mapping dialog
 1. Init with smaller layout depending on initial screen size.
 2. Maybe cli `--auto-resize` option that changes layouts at breakpoints.

@@ -27,11 +27,11 @@
 [x] Add google scraper
 
 ### at some point
-[ ] look up how to add logging `debug!` macros; will help troubleshooting blocked requests
 [x] use trust to distrubute app binaries
+[ ] look up how to add logging `debug!` macros; will help troubleshooting blocked requests
+[ ] handle backoff responses from SE
 [ ] allow new queries from TUI, e.g. hit `/` for a prompt
 [ ] or `/` searches current q/a
 [ ] clean up dingleberries in error.rs and term.rs ; only keep what's actually ergonomic
-[ ] add duckduckgo logo to readme
 [ ] per platform package mgmt
 [ ] more testing

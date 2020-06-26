@@ -86,6 +86,13 @@ impl Search {
             SearchEngine::Google => self.search_by_scraper(Google).await,
             SearchEngine::StackExchange => self.parallel_search_advanced().await,
         }
+        .and_then(|qs| {
+            if qs.is_empty() {
+                Err(Error::NoResults)
+            } else {
+                Ok(qs)
+            }
+        })
     }
 
     /// Search query at duckduckgo and then fetch the resulting questions from SE.

@@ -147,25 +147,18 @@ fn parse_with_selector(
             .attr("href")
             .ok_or_else(|| Error::ScrapingError("Anchor with no href".to_string()))
             .map(|href| percent_decode_str(href).decode_utf8_lossy().into_owned())?;
-        sites
-            .iter()
-            .find_map(|(site_code, site_url)| {
-                let id = question_url_to_id(site_url, &url)?;
-                ordering.insert(id.to_owned(), count);
-                match question_ids.entry(site_code.to_owned()) {
-                    Entry::Occupied(mut o) => o.get_mut().push(id),
-                    Entry::Vacant(o) => {
-                        o.insert(vec![id]);
-                    }
+        sites.iter().find_map(|(site_code, site_url)| {
+            let id = question_url_to_id(site_url, &url)?;
+            ordering.insert(id.to_owned(), count);
+            match question_ids.entry(site_code.to_owned()) {
+                Entry::Occupied(mut o) => o.get_mut().push(id),
+                Entry::Vacant(o) => {
+                    o.insert(vec![id]);
                 }
-                count += 1;
-                Some(())
-            })
-            .ok_or_else(|| {
-                Error::ScrapingError(
-                    "Search engine returned results outside of SE network".to_string(),
-                )
-            })?;
+            }
+            count += 1;
+            Some(())
+        });
         if count >= limit as usize {
             break;
         }

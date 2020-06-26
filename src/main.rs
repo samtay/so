@@ -6,23 +6,23 @@ mod term;
 mod tui;
 mod utils;
 
-use crate::stackexchange::Question;
-use crate::tui::markdown::Markdown;
 use crossterm::style::Color;
-use error::{Error, Result};
 use lazy_static::lazy_static;
 use minimad::mad_inline;
-use stackexchange::{LocalStorage, Search};
-use term::mk_print_error;
 use termimad::{CompoundStyle, MadSkin};
 use tokio::runtime::Runtime;
 use tokio::task;
+
+use error::{Error, Result};
+use stackexchange::{LocalStorage, Question, Search};
+use term::mk_print_error;
+use tui::markdown::Markdown;
 
 fn main() -> Result<()> {
     // Markdown styles (outside of TUI)
     let mut skin = MadSkin::default();
     skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
-    skin.code_block.set_fg(Color::Cyan);
+    skin.code_block.compound_style = CompoundStyle::with_fg(Color::Cyan);
     let mut print_error = mk_print_error(&skin);
 
     // Tokio runtime

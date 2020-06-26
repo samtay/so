@@ -28,7 +28,7 @@ pub enum Error {
     ScrapingError(String),
     #[error("Couldn't find a suitable project directory; is your OS supported?")]
     ProjectDir,
-    #[error("Sorry, couldn't find any answers for your query")]
+    #[error("Sorry, couldn't find any answers to your question")]
     NoResults,
 }
 
