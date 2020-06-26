@@ -14,12 +14,15 @@
 [s3]: https://img.shields.io/badge/license-MIT-blue.svg
 [l3]: ./LICENSE
 
-<h5 align="center">A terminal interface for StackOverflow written in Rust</h5>
+<h5 align="center"> A terminal interface for StackOverflow written in Rust </h5>
 
-# so
+<h1 align="center">
+
+![](assets/demo.svg)
+
+</h1>
 
 **Note**: still working out some kinks. Initial release not published just yet.
-**<Insert GIF here>**
 
 ## example usage
 While I like the acronym *so*, this tool would actually be better described as

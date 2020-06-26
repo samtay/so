@@ -1,14 +1,14 @@
 # TODO
 
 ### chores
-1. Make an example GIF
 2. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 3. Benchmark parsing. Probaly way faster to use regex to find question IDs
    within URLs (or *gasp* the entire doc).
 4. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
+5. Release on AUR & Homebrew
 
 ### bugs
-0. Another parser bug: some links return /questions/tagged/; need to make sure
+0. **Priority** Another parser bug: some links return /questions/tagged/; need to make sure
    we only select digits. Hello regex. (use test/duckduckgo/tagged.html to write
    a new test).
 1.
@@ -32,7 +32,7 @@ SpannedString, and own everything...
 
 #### Endless improvements for the TUI
 1. Add Shift+TAB to cycle focus backwards (just add CirculularFocus wrapper)
-3. Small text at bottom with '?' to bring up key mapping dialog
+3. **Priority** Small text at bottom with '?' to bring up key mapping dialog
 1. Init with smaller layout depending on initial screen size.
 2. Maybe cli `--auto-resize` option that changes layouts at breakpoints.
 5. Maybe **[ESC]** cycles layout in the opposite direction? And stops at
