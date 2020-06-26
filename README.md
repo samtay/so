@@ -1,7 +1,7 @@
 <h1 align="center">
 <img width="300px" src="assets/logo.png" />
 
-[![travis][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] ![MIT][s3]
+[![travis][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] [![MIT][s3]][l3]
 
 </h1>
 
@@ -12,6 +12,7 @@
 [s2]: https://img.shields.io/crates/v/so.svg
 [l2]: https://crates.io/crates/so
 [s3]: https://img.shields.io/badge/license-MIT-blue.svg
+[l3]: ./LICENSE
 
 <h5 align="center">A terminal interface for StackOverflow written in Rust</h5>
 
