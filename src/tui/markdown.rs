@@ -4,7 +4,6 @@
 //! TODO: Bring in the full power of termimad (e.g. md tables) in a View;
 //! implementation of those features (.e.g automatic wrapping within each table
 //! cell) might be easier in this setting anyway.
-// Figure out why the hell cursive needs to keep around the input string?
 
 // TODO use ColorStyle::secondary() etc. over specific enums
 
@@ -12,10 +11,6 @@ use cursive::theme::{Effect, PaletteColor, Style};
 use cursive::utils::markup::{StyledIndexedSpan, StyledString};
 use cursive::utils::span::{IndexedCow, IndexedSpan};
 use pulldown_cmark::{self, CowStr, Event, Options, Tag};
-use std::borrow::Cow;
-use unicode_width::UnicodeWidthStr;
-
-use super::entities::is_entity;
 
 pub type Markdown = StyledString;
 
@@ -31,8 +26,6 @@ where
     StyledString::with_spans(input, spans)
 }
 
-// TODO handle other stackexchange oddities here ENTITIES
-// TODO then benchmark
 pub fn preprocess(input: String) -> String {
     input
         .as_str()
@@ -88,7 +81,6 @@ pub struct Parser<'a> {
     in_list: bool,
     after_code_block: bool,
     stack: Vec<Style>,
-    input: &'a str,
     parser: pulldown_cmark::Parser<'a>,
 }
 
@@ -99,7 +91,6 @@ impl<'a> Parser<'a> {
         opts.insert(Options::ENABLE_STRIKETHROUGH);
         opts.insert(Options::ENABLE_TASKLISTS);
         Parser {
-            input,
             item: None,
             in_list: false,
             after_code_block: false,
@@ -109,7 +100,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Creates a new span with the given value
+    /// Creates a new span with the given value and the current pushed styles
     fn literal<S>(&self, text: S) -> StyledIndexedSpan
     where
         S: Into<String>,
@@ -117,29 +108,18 @@ impl<'a> Parser<'a> {
         StyledIndexedSpan::simple_owned(text.into(), Style::merge(&self.stack))
     }
 
-    fn cow_to_span(&self, text: Cow<str>, style: Option<Style>) -> StyledIndexedSpan {
-        let width = text.width();
-        StyledIndexedSpan {
-            content: IndexedCow::from_cow(text, self.input),
-            attr: style.unwrap_or_else(|| Style::merge(&self.stack)),
-            width,
-        }
-    }
-
-    // Big hack here because cursive nonsense;
-    // Do some benchmarking and see if the performance is worse
-    // by searching the entity set; if so, just own everything
+    /// Creates a new span with pulldown_cmark's CowStr, optionally overriding
+    /// current styles
+    ///
+    /// Note: benchmarks show that owning everything (and in doing so, skirting
+    /// lots of borrow panics), is more performant than all the checks to ensure
+    /// borrowing doesn't panic.
     fn cowstr_to_span(&self, text: CowStr, style: Option<Style>) -> StyledIndexedSpan {
-        let text = match text {
-            CowStr::Boxed(text) => Cow::Owned(text.into()),
-            CowStr::Inlined(text) => Cow::Owned(text.to_string()),
-            // If markdown parsed an HTML entity, own the string to avoid panicking in
-            // cursive::utils::span::from_cow
-            CowStr::Borrowed(text) if is_entity(text) => Cow::Owned(text.to_string()),
-            // Otherwise, borrow
-            CowStr::Borrowed(text) => Cow::Borrowed(text),
-        };
-        self.cow_to_span(text, style)
+        // Own everything
+        StyledIndexedSpan::simple_owned(
+            text.into_string(),
+            style.unwrap_or_else(|| Style::merge(&self.stack)),
+        )
     }
 }
 
@@ -153,10 +133,9 @@ impl<'a> Iterator for Parser<'a> {
                 Some(event) => event,
             };
 
-            // TODO fix list tag
             match next {
                 Event::Start(tag) => match tag {
-                    // Add to the stack!
+                    // Add to the stack
                     Tag::Emphasis => self.stack.push(Style::from(Effect::Italic)),
                     Tag::Heading(level) if level == 1 => {
                         self.stack.push(Style::from(PaletteColor::TitlePrimary))
@@ -187,24 +166,25 @@ impl<'a> Iterator for Parser<'a> {
                     Tag::Item => match self.item {
                         Some(ix) => {
                             let pre = ix.to_string() + ". ";
-                            return Some(
-                                self.cow_to_span(Cow::Owned(pre), Some(Style::from(Effect::Bold))),
-                            );
+                            return Some(StyledIndexedSpan::simple_owned(
+                                pre,
+                                Style::from(Effect::Bold),
+                            ));
                         }
                         None => {
-                            return Some(self.literal("• ".to_string()));
+                            return Some(self.literal("• "));
                         }
                     },
                     _ => (),
                 },
                 Event::End(tag) => match tag {
-                    // Remove from stack!
+                    // Remove from stack
                     Tag::Paragraph if self.first => self.first = false,
                     Tag::Heading(_) => {
                         self.stack.pop().unwrap();
                         return Some(self.literal("\n\n"));
                     }
-                    // TODO underline the link
+                    // TODO underline the link?
                     Tag::Link(_, link, _) => return Some(self.literal(format!("]({})", link))),
                     Tag::CodeBlock(_) => {
                         self.after_code_block = true;
@@ -238,9 +218,9 @@ impl<'a> Iterator for Parser<'a> {
                 }
                 Event::TaskListMarker(checked) => {
                     let mark = if checked { "[x]" } else { "[ ]" };
-                    return Some(self.cow_to_span(
-                        Cow::Owned(mark.to_string()),
-                        Some(Style::from(Effect::Bold)),
+                    return Some(StyledIndexedSpan::simple_owned(
+                        mark.to_string(),
+                        Style::from(Effect::Bold),
                     ));
                 }
             }
@@ -248,8 +228,6 @@ impl<'a> Iterator for Parser<'a> {
     }
 }
 
-// TODO: `how to reverse a list in Python` broken:
-// due to newline problem in pulldowm_cmark and stackexchange differences
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -473,7 +451,7 @@ and tasks
             },
             Span {
                 content: "\n\n",
-                attr: &Style::none(), // TODO too many newlines
+                attr: &Style::none(), // TODO too many newlines?
                 width: 0,
             },
             Span {
@@ -508,7 +486,7 @@ and tasks
         }
     }
     #[test]
-    fn test_from_cow_panic() {
+    fn test_entities() {
         let input = "
 I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 1.1 installed.\r\n\r\nAfter I hit <kbd>Esc</kbd> to exit insert mode I can't figure out how to save and quit. Hitting <kbd>Ctrl</kbd> + <kbd>C</kbd> shows me instructions that say typing \"quit<enter>\" will write and quit, but it doesn't seem to work.\r\n\r\n\r\n\r\n".to_string();
         let parsed = parse(preprocess(input));
@@ -628,6 +606,52 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
                 content: "\" will write and quit, but it doesn\'t seem to work.",
                 attr: &Style::none(),
                 width: 51,
+            },
+        ];
+
+        for (span, expected_span) in spans.iter().zip(expected_spans.iter()) {
+            assert_eq!(span, expected_span);
+        }
+    }
+
+    #[test]
+    // It appears pulldown_cmark sometimes replaces \t with a space and still
+    // calls it "borrowed", but the pointer values show otherwise.
+    fn test_code_block_panic() {
+        let input =
+            "1. Run the commands below, and compare the outputs\r\n\r\n\t\tsudo cat /etc/shadow";
+        let parsed = parse(input);
+        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let expected_spans = &[
+            Span {
+                content: "1. ",
+                attr: &Style::from(Effect::Bold),
+                width: 3,
+            },
+            Span {
+                content: "Run the commands below, and compare the outputs",
+                attr: &Style::none(),
+                width: 47,
+            },
+            Span {
+                content: "\n\n",
+                attr: &Style::from(PaletteColor::Secondary),
+                width: 0,
+            },
+            Span {
+                content: " ",
+                attr: &Style::from(PaletteColor::Secondary),
+                width: 1,
+            },
+            Span {
+                content: "sudo cat /etc/shadow",
+                attr: &Style::from(PaletteColor::Secondary),
+                width: 20,
+            },
+            Span {
+                content: "\n",
+                attr: &Style::none(),
+                width: 0,
             },
         ];
 

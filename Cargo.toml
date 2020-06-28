@@ -19,7 +19,11 @@ travis-ci = { repository = "samtay/so", branch = "master" }
 criterion = "0.3"
 
 [[bench]]
-name = "parsing"
+name = "html_parsing"
+harness = false
+
+[[bench]]
+name = "md_parsing"
 harness = false
 
 [dependencies]

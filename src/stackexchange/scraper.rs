@@ -184,7 +184,7 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
         } else {
             input[0..].to_string()
         };
-        if id.chars().into_iter().all(|c| c.is_digit(10)) {
+        if id.chars().all(|c| c.is_digit(10)) {
             Some(id)
         } else {
             None

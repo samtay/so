@@ -19,7 +19,7 @@ use std::time::Duration;
 ///
 /// Still, I could try creating a regex that captures the url encoded SE url and question id and
 /// multiline regex the entire HTML document. It might be faster than the scraper library?
-fn bench_parsers(c: &mut Criterion) {
+fn bench_html_parsers(c: &mut Criterion) {
     let limit: u16 = 10;
     let mut sites = HashMap::new();
     sites.insert(
@@ -70,5 +70,5 @@ fn bench_parsers(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_parsers);
+criterion_group!(benches, bench_html_parsers);
 criterion_main!(benches);
