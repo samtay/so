@@ -180,7 +180,11 @@ fn parse_with_selector(
 fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
     ["/questions/", "/q/"].iter().find_map(|segment| {
         let fragment = site_url.trim_end_matches('/').to_owned() + segment;
-        let ix = input.find(&fragment)? + fragment.len();
+        let mut ix = input.find(&fragment)?;
+        if ix > 0 && input.chars().nth(ix - 1) == Some('.') {
+            return None;
+        }
+        ix += fragment.len();
         let input = &input[ix..];
         let id = if let Some(end) = input.find('/') {
             input[0..end].to_string()
@@ -361,8 +365,8 @@ mod tests {
 
         // Different site
         // TODO get this to pass; then test tagged.html
-        //let site_url = "meta.stackexchange.com";
-        //let input = "/l/?kh=-1&uddg=https://math.meta.stackexchange.com/q/11828270";
-        //assert_eq!(question_url_to_id(site_url, input), None);
+        let site_url = "meta.stackexchange.com";
+        let input = "/l/?kh=-1&uddg=https://math.meta.stackexchange.com/q/11828270";
+        assert_eq!(question_url_to_id(site_url, input), None);
     }
 }
