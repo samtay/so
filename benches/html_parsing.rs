@@ -53,7 +53,7 @@ fn bench_html_parsers(c: &mut Criterion) {
     );
 
     group.bench_with_input(
-        BenchmarkId::new("Google.parse", "/q/"),
+        BenchmarkId::new("Google.parse", "q"),
         include_str!("../test/google/parsing-q.html"),
         |b, html| b.iter(|| Google.parse(html, &sites, limit)),
     );
