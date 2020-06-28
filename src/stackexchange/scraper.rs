@@ -169,14 +169,7 @@ fn parse_with_selector(
     })
 }
 
-/// For example
-/// ```
-/// let id = "stackoverflow.com";
-/// let input = "/l/?kh=-1&uddg=https://stackoverflow.com/questions/11828270/how-do-i-exit-the-vim-editor";
-/// assert_eq!(question_url_to_id(site_url, input), Some(String::from("11828270")))
-/// ```
 // TODO use str_prefix once its stable
-// TODO benchmark this. regex is almost undoubtably superior here
 fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
     ["/questions/", "/q/"].iter().find_map(|segment| {
         let fragment = site_url.trim_end_matches('/').to_owned() + segment;

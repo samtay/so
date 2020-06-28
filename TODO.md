@@ -2,15 +2,14 @@
 
 ### chores
 2. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
-3. Benchmark parsing. Probaly way faster to use regex to find question IDs
-   within URLs (or *gasp* the entire doc).
 4. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 5. Release on AUR & Homebrew
+6. Benchmark markdown parsing: see what I'm gaining by borrowing and querying
+   entity hash set. If building my own spannedstring source from md output
+   doesn't affect performance, do it! This would rule out a large class of
+   indexing panics coming from cursive.
 
 ### bugs
-0. **Priority** Another parser bug: some links return /questions/tagged/; need to make sure
-   we only select digits. Hello regex. (use test/duckduckgo/tagged.html to write
-   a new test).
 1.
 ```
 so --search-engine google --site stackoverflow --site askubuntu how to stop typing sudo
@@ -19,11 +18,6 @@ results in
 ```
 thread '<unnamed>' panicked at 'assertion failed: value_pos >= source_pos', /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/cursive_core-0.1.0/src/utils/span.rs:372:17
 ```
-So maybe the md parser should just build its own source for
-SpannedString, and own everything...
-2. Searching site:meta.stackexchange.com also returns results from
-   math.meta.stackexchange.com; this will lead to requesting question IDs that
-   don't exist. Need to improve parser to account for this.
 
 ### feature ideas
 - Add sort option, e.g. relevance|votes|date

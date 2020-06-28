@@ -3,6 +3,22 @@ use so::stackexchange::scraper::{DuckDuckGo, Google, Scraper};
 use std::collections::HashMap;
 use std::time::Duration;
 
+/// Note: these benchmarks show that replacing question_url_to_id with regex, i.e.
+/// ```rust
+/// fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
+///     let re: Regex = Regex::new(&format!(
+///         "[^\\.]{}/(:?q|questions)/(?P<id>\\d+)",
+///         site_url.replace('.', "\\.")
+///     ))
+///     .unwrap();
+///     Some(re.captures(input)?.name("id")?.as_str().to_owned())
+/// }
+/// ```
+/// **greatly** degrades peformance (maybe due to the fact that the regex depends on configuration
+/// and can't be compiled with lazy_static?).
+///
+/// Still, I could try creating a regex that captures the url encoded SE url and question id and
+/// multiline regex the entire HTML document. It might be faster than the scraper library?
 fn bench_parsers(c: &mut Criterion) {
     let limit: u16 = 10;
     let mut sites = HashMap::new();
