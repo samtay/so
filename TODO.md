@@ -10,14 +10,8 @@
    indexing panics coming from cursive.
 
 ### bugs
-1.
-```
-so --search-engine google --site stackoverflow --site askubuntu how to stop typing sudo
-```
-results in
-```
-thread '<unnamed>' panicked at 'assertion failed: value_pos >= source_pos', /home/sam/.cargo/registry/src/github.com-1ecc6299db9ec823/cursive_core-0.1.0/src/utils/span.rs:372:17
-```
+1. why does `so -e stackexchange -s stackoverflow how do i exit vim`  result in
+   different results than `so -e stackexchange -s stackoverflow "how do i exit vim"`?
 
 ### feature ideas
 - Add sort option, e.g. relevance|votes|date

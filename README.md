@@ -31,7 +31,7 @@ differentiates it from [similar](https://github.com/santinic/how2)
 [tools](https://github.com/gleitz/howdoi) is that you can simultaneously search
 any number of sites in the StackExchange network:
 ```shell
-# use default configured sites, e.g. [stackoverflow.com]
+# search using default configuration
 $ so how do i reverse a list in python
 
 # search for a latex solution
@@ -49,13 +49,15 @@ binary from the [release artifacts](https://github.com/samtay/so/releases).
 You can quickly
 install the binary for common targets (Linux, MacOS, Windows) to directory
 `DEST` with:
-```shell
-curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh | bash -s -- --to DEST
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh \
+  | bash -s -- --to DEST
 ```
 Note: you may need extra permissions for certain paths, e.g.
-```shell
+```bash
 # install to /usr/local/bin
-curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh | sudo bash -s -- --to /usr/local/bin.
+curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh \
+  | bash -s -- --to . && sudo mv so /usr/local/bin
 ```
 And of course, you may want to `curl https://samtay.github.io/so/install.sh`
 first and make sure you're comfortable executing it. You can also view it
@@ -78,6 +80,8 @@ cargo install so
 Coming soon. Help appreciated!
 
 ## documentation
+
+### configuration
 The configuration files for e.g. a user `Alice` can be found in the following
 directories:
 
@@ -85,10 +89,10 @@ directories:
 - Windows: `C:\Users\Alice\AppData\Roaming\Sam Tay\so`
 - MacOS: `/Users/Alice/Library/Application Support/io.Sam-Tay.so`
 
-### defaults
+#### defaults
 The `config.yml` file let's you specify your CLI defaults. So if you dislike the
 lucky prompt, always search serverfault.com and unix.stackexchange.com, and
-dislike the ethics of Google, you can set your config file like this:
+want the [fastest search engine](#search-engines), you can set your config file like this:
 ```yaml
 # config.yml
 ---
@@ -98,17 +102,17 @@ lucky: false
 sites:
   - serverfault
   - unix
-search_engine: duckduckgo
+search_engine: stackexchange
 ```
 Run `so --help` to see your current defaults.
 
-### themes
+#### themes
 In the same directory you'll find `colors.toml` which is self-documented. The
 default theme attempts to blend in with your default terminal theme, but you can
-change it as necessary. There are a couple available themes in the
-[themes](./themes) directory.
+change it as necessary. There are some themes in the [themes](./themes)
+directory as well.
 
-### api keys
+#### api keys
 If you want to use your own [StackExchange API
 Key](https://api.stackexchange.com/docs) you can set it via
 ```
@@ -118,6 +122,14 @@ You can also choose to use no key by editing your configuration to `api_key: ~`.
 If for some reason my API key is globally throttled, you can hit the
 StackExchange API with no key up to 300 times per day per IP, which I imagine is
 fine for most users.
+
+### search engines
+The available search engines are StackExchange, DuckDuckGo, and Google.
+StackExchange will always be the fastest to search because it doesn't require an
+additional request or any HTML parsing; however, it is also very primitive.
+DuckDuckGo is in second place for speed, as its response HTML is much smaller
+than Google's. I've found that it performs well for my queries, so it is the
+default search engine.
 
 ### multi-site searching
 As stated in the [docs](https://api.stackexchange.com/docs/throttle),
@@ -136,17 +148,17 @@ library in pure Rust which seems to work quite well on Linux, MacOS, BSD, and
 Redox.  The windows backend is by default
 [crossterm](https://github.com/crossterm-rs/crossterm), and while its level of
 support is awesome, it does comes at a price in performance. On my machine, the
-app kind of flashes between draws quite a bit. So if you are on Mac, Linux, or
-Redox, your best bet is to compile with default features which uses the termion
-backend. If you are on windows, use crossterm, but know it will be slightly
-jumpy.
+app kind of flashes between draws. So if you are on Mac, Linux, or Redox, your
+best bet is to compile with default features which uses the termion backend. If
+you are on windows, use crossterm, but know it will be slightly jumpy.
 
 If the crossterm folks figure out a fix for allowing ncurses to receive [resize
 events](https://github.com/crossterm-rs/crossterm/issues/447), and you have
 [ncurses installed](https://github.com/gyscos/cursive/wiki/Install-ncurses) on
-your system, then the ncurses and pancurses backends will also work well.
-Just know that *currently* if you choose this option, and you run the `--lucky`
-prompt, you won't be able to resize the terminal window while the TUI is open.
+your system, then the ncurses and pancurses backends are likely the most
+performant.  Just know that *currently* if you choose this option, and you run
+the `--lucky` prompt, you won't be able to resize the terminal window while the
+TUI is open.
 
 Available backends:
 
@@ -160,7 +172,7 @@ E.g. to use `ncurses-backend`:
 cargo install so --no-default-features --features ncurses-backend
 ```
 
-See more information on this choice
+See more information about this choice
 [here](https://github.com/gyscos/cursive/wiki/Backends).
 
 ## contributions
