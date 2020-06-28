@@ -15,7 +15,12 @@ edition = "2018"
 appveyor = { repository = "samtay/so", branch = "master", service = "github" }
 travis-ci = { repository = "samtay/so", branch = "master" }
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "parsing"
+harness = false
 
 [dependencies]
 thiserror = "1.0"

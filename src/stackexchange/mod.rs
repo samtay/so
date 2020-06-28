@@ -1,7 +1,8 @@
 mod api;
 mod local_storage;
-mod scraper;
 mod search;
+// Exposed for benchmarking
+pub mod scraper;
 
 pub use api::{Answer, Question};
 pub use local_storage::LocalStorage;
