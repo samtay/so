@@ -30,7 +30,9 @@
  - [x] use trust to distrubute app binaries
  - [ ] look up how to add logging `debug!` macros; will help troubleshooting blocked requests
  - [ ] handle backoff responses from SE
- - [ ] allow new queries from TUI, e.g. hit `/` for a prompt
+ - [ ] allow new queries from TUI, e.g. hit `/` for a prompt. This could
+ also bring up an advanced search form that allows mutliselect of sites, select
+ search engine, etc.
  - [ ] or `/` searches current q/a
  - [ ] clean up dingleberries in error.rs and term.rs ; only keep what's actually ergonomic
  - [ ] per platform package mgmt

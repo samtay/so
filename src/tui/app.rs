@@ -1,7 +1,9 @@
 use cursive::event::Event;
 use cursive::theme::{BaseColor, Color, Effect, Style};
+use cursive::traits::{Nameable, Scrollable};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
+use cursive::views::{Dialog, TextView};
 use cursive::Cursive;
 use cursive::XY;
 use std::collections::HashMap;
@@ -16,6 +18,8 @@ use super::views::{
 use crate::config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
+
+pub const NAME_HELP_VIEW: &str = "help_view";
 
 pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     let mut siv = cursive::default();
@@ -61,8 +65,16 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     if let Some(cb) = cb {
         cb(&mut siv)
     }
-    cursive::logger::init();
-    siv.add_global_callback('?', cursive::Cursive::toggle_debug_console);
+
+    // Help / View keymappings
+    siv.add_global_callback('?', |s| {
+        if let Some(pos) = s.screen_mut().find_layer_from_name(NAME_HELP_VIEW) {
+            s.screen_mut().remove_layer(pos);
+        } else {
+            s.add_layer(help());
+        }
+    });
+    // Reload theme
     siv.add_global_callback(Event::CtrlChar('r'), |s| {
         s.load_theme_file(config::theme_file_name().unwrap())
             .unwrap()
@@ -125,6 +137,34 @@ fn pretty_score(score: i32) -> StyledString {
         format!("({}) ", score),
         Style::merge(&[Style::from(color), Style::from(Effect::Bold)]),
     )
+}
+
+// This would be a good usecase for brining in termimad tables
+// TODO dont parse this at runtime, just hardcode it
+pub fn help() -> Dialog {
+    let bindings = r###"
+## Panes
+**Tab**:   Focus next pane
+**Space**: Cycle layout (4 Pane, 2 Pane, FullScreen)
+
+## Scroll
+**h,j,k,l**:          ←,↓,↑,→
+**Ctrl<b>, Ctrl<u>**: ↑ x 10
+**Ctrl<f>, Ctrl<d>**: ↓ x 10
+**gg**:               Scroll To Top
+**G**:                Scroll To Bottom
+
+## Misc
+**ZZ, Ctrl<c>**: Exit
+**?**:           Toggle this help menu
+"###;
+    Dialog::around(
+        TextView::new(markdown::parse(bindings))
+            .scrollable()
+            .with_name(NAME_HELP_VIEW),
+    )
+    .dismiss_button("Close")
+    .title("Help")
 }
 
 // TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!

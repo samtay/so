@@ -4,13 +4,10 @@
 2. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 4. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 5. Release on AUR & Homebrew
-6. Benchmark markdown parsing: see what I'm gaining by borrowing and querying
-   entity hash set. If building my own spannedstring source from md output
-   doesn't affect performance, do it! This would rule out a large class of
-   indexing panics coming from cursive.
 
 ### bugs
-1. why does `so -e stackexchange -s stackoverflow how do i exit vim`  result in
+1. Shift+TAB should move focus backwards
+2. why does `so -e stackexchange -s stackoverflow how do i exit vim`  result in
    different results than `so -e stackexchange -s stackoverflow "how do i exit vim"`?
 
 ### feature ideas
@@ -19,8 +16,6 @@
 - Maybe allow slimmer builds without TUI that only offer --lucky.
 
 #### Endless improvements for the TUI
-1. Add Shift+TAB to cycle focus backwards (just add CirculularFocus wrapper)
-3. **Priority** Small text at bottom with '?' to bring up key mapping dialog
 1. Init with smaller layout depending on initial screen size.
 2. Maybe cli `--auto-resize` option that changes layouts at breakpoints.
 5. Maybe **[ESC]** cycles layout in the opposite direction? And stops at
