@@ -48,8 +48,6 @@ termimad = "0.8"
 
 crossterm = { version = "0.17", features = ["event-stream"] }
 pulldown-cmark = { version = "0.7", default-features = false }
-phf = { version = "0.8", features = ["macros"] }
-unicode-width = "0.1.5"
 
 [dependencies.cursive]
 version =  "0.15"
