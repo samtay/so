@@ -148,11 +148,13 @@ pub fn help() -> Dialog {
 **Space**: Cycle layout (4 Pane, 2 Pane, FullScreen)
 
 ## Scroll
-**h,j,k,l**:          ←,↓,↑,→
-**Ctrl<b>, Ctrl<u>**: ↑ x 10
-**Ctrl<f>, Ctrl<d>**: ↓ x 10
-**gg**:               Scroll To Top
-**G**:                Scroll To Bottom
+**h,j,k,l**: ←,↓,↑,→
+**Ctrl<u>**: ↑ x 5
+**Ctrl<d>**: ↓ x 5
+**Ctrl<b>**: ↑ x 10
+**Ctrl<f>**: ↓ x 10
+**gg**:      Scroll To Top
+**G**:       Scroll To Bottom
 
 ## Misc
 **ZZ, Ctrl<c>**: Exit

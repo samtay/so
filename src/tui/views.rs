@@ -550,11 +550,24 @@ impl<T: View> ViewWrapper for VimBindingsView<T> {
             Event::Char('l') => {
                 return self.view.on_event(Event::Key(Key::Right));
             }
-            Event::CtrlChar('d') | Event::CtrlChar('f') => {
+            Event::CtrlChar('d') => {
                 return self.view.on_event(Event::Key(Key::PageDown));
             }
-            Event::CtrlChar('u') | Event::CtrlChar('b') => {
+            Event::CtrlChar('f') => {
+                // Double page down
+                let res = self.view.on_event(Event::Key(Key::PageDown));
+                self.view.on_event(Event::Key(Key::PageDown));
+                // Return whether or not initial page down was consumed
+                return res;
+            }
+            Event::CtrlChar('u') => {
                 return self.view.on_event(Event::Key(Key::PageUp));
+            }
+            Event::CtrlChar('b') => {
+                // Double page up
+                let res = self.view.on_event(Event::Key(Key::PageUp));
+                self.view.on_event(Event::Key(Key::PageUp));
+                return res;
             }
             Event::Char('G') => {
                 return self.view.on_event(Event::Key(Key::End));
