@@ -60,6 +60,7 @@ branches:
     # release tags
     - /^v\d+\.\d+\.\d+.*$/
     - master
+    - develop
 
 notifications:
   email:
