@@ -134,8 +134,8 @@ impl<'a> Iterator for Parser<'a> {
             };
 
             match next {
+                // Add styles to the stack
                 Event::Start(tag) => match tag {
-                    // Add to the stack
                     Tag::Emphasis => self.stack.push(Style::from(Effect::Italic)),
                     Tag::Heading(level) if level == 1 => {
                         self.stack.push(Style::from(PaletteColor::TitlePrimary))
@@ -146,22 +146,11 @@ impl<'a> Iterator for Parser<'a> {
                     Tag::Link(_, _, _) => return Some(self.literal("[")),
                     Tag::CodeBlock(_) => {
                         self.stack.push(Style::from(PaletteColor::Secondary));
-                        return Some(self.literal("\n\n"));
                     }
                     Tag::Strong => self.stack.push(Style::from(Effect::Bold)),
-                    Tag::Paragraph if self.after_code_block => {
-                        self.after_code_block = false;
-                        return Some(self.literal("\n"));
-                    }
-                    Tag::Paragraph if !self.first && !self.in_list => {
-                        return Some(self.literal("\n\n"));
-                    }
                     Tag::List(ix) => {
                         self.item = ix;
                         self.in_list = true;
-                        if !self.first {
-                            return Some(self.literal("\n\n"));
-                        }
                     }
                     Tag::Item => match self.item {
                         Some(ix) => {
@@ -177,9 +166,9 @@ impl<'a> Iterator for Parser<'a> {
                     },
                     _ => (),
                 },
+                // Remove styles from stack
                 Event::End(tag) => match tag {
-                    // Remove from stack
-                    Tag::Paragraph if self.first => self.first = false,
+                    Tag::Paragraph => return Some(self.literal("\n\n")),
                     Tag::Heading(_) => {
                         self.stack.pop().unwrap();
                         return Some(self.literal("\n\n"));
@@ -189,6 +178,7 @@ impl<'a> Iterator for Parser<'a> {
                     Tag::CodeBlock(_) => {
                         self.after_code_block = true;
                         self.stack.pop().unwrap();
+                        return Some(self.literal("\n"));
                     }
                     Tag::Emphasis | Tag::Strong => {
                         self.stack.pop().unwrap();
@@ -197,6 +187,7 @@ impl<'a> Iterator for Parser<'a> {
                         self.item = None;
                         self.in_list = false;
                         self.first = false;
+                        return Some(self.literal("\n"));
                     }
                     Tag::Item => {
                         self.item = self.item.map(|ix| ix + 1);
@@ -207,6 +198,7 @@ impl<'a> Iterator for Parser<'a> {
                 Event::Rule => return Some(self.literal("---")),
                 Event::SoftBreak => return Some(self.literal("\n")),
                 Event::HardBreak => return Some(self.literal("\n")),
+                // Style code with secondary color
                 Event::Code(text) => {
                     return Some(
                         self.cowstr_to_span(text, Some(Style::from(PaletteColor::Secondary))),
@@ -350,7 +342,7 @@ Obviously.";
             Span {
                 content: "\n\n",
                 width: 0,
-                attr: &Style::from(PaletteColor::Secondary),
+                attr: &Style::none(),
             },
             Span {
                 content: "indented code blocks\n",
@@ -370,7 +362,7 @@ Obviously.";
             Span {
                 content: "\n\n",
                 width: 0,
-                attr: &Style::from(PaletteColor::Secondary),
+                attr: &Style::none(),
             },
             Span {
                 content: "code fences\n",
@@ -450,8 +442,8 @@ and tasks
                 width: 0,
             },
             Span {
-                content: "\n\n",
-                attr: &Style::none(), // TODO too many newlines?
+                content: "\n",
+                attr: &Style::none(),
                 width: 0,
             },
             Span {
@@ -635,7 +627,7 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
             },
             Span {
                 content: "\n\n",
-                attr: &Style::from(PaletteColor::Secondary),
+                attr: &Style::none(),
                 width: 0,
             },
             Span {
