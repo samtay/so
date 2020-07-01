@@ -175,11 +175,13 @@ cargo install so --no-default-features --features ncurses-backend
 See more information about this choice
 [here](https://github.com/gyscos/cursive/wiki/Backends).
 
-## contributions
-This was my first time writing Rust, and I wrote about it
-[here](https://samtay.github.io/TODO) if you're into that sort of thing.
-I just want to put out a **warning** that there is very likely some non-idiomatic
-and straight up ugly code throughout this project, so don't come looking here
-for a good Rust example! That being said, I would love to improve the codebase
-so if you have any refactoring contributions feel free to send me a PR, but
-please also accompany them with a short explanation.
+## contributing
+This was my first time writing Rust and I want to put out a **warning** that
+there is very likely some non-idiomatic and straight up ugly code throughout
+this project, so don't come looking here for a good Rust example! That being
+said, I would love to improve the codebase so if you have any refactoring
+contributions feel free to send me a PR, but please also add a short
+explanation.
+
+## credits
+Credit to my good friend [Charles](heyitscharles.com) for logo design.
