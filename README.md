@@ -184,4 +184,4 @@ guidelines](.github/CONTRIBUTING.md) and submit any refactoring issues or pull
 requests.
 
 ## credits
-Credit to my good friend [Charles](heyitscharles.com) for logo design.
+Credit to my good friend [Charles](http://heyitscharles.com) for logo design.

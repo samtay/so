@@ -1,6 +1,8 @@
 # TODO
 
 ### chores
+0. Add a simpler loading spinner during --lucky retrieval and between SPACE and
+   TUI.
 0. Use `include_str!` instead of hardcoding `colors.toml`.
 1. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 2. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
