@@ -22,8 +22,6 @@
 
 </h1>
 
-# so
-
 ## example usage
 While I like the acronym *so*, this tool would actually be better described as
 *se*: an interface to the StackExchange network. In particular one thing that
