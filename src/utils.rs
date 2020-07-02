@@ -1,6 +1,4 @@
 use crate::error::{Error, PermissionType, Result};
-use crossterm::event::{read, Event, KeyCode, KeyEvent};
-use crossterm::terminal;
 use std::fs::File;
 use std::io::ErrorKind;
 use std::path::PathBuf;
@@ -23,24 +21,4 @@ pub fn create_file(filename: &PathBuf) -> Result<File> {
             Error::from(e)
         }
     })
-}
-
-pub fn wait_for_char(c: char) -> Result<bool> {
-    let mut pressed = false;
-    terminal::enable_raw_mode()?;
-    loop {
-        match read()? {
-            Event::Key(KeyEvent {
-                code: KeyCode::Char(ch),
-                ..
-            }) if ch == c => {
-                pressed = true;
-                break;
-            }
-            Event::Key(_) => break,
-            _ => (),
-        }
-    }
-    terminal::disable_raw_mode()?;
-    Ok(pressed)
 }

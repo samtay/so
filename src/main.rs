@@ -15,7 +15,6 @@ use tokio::task;
 
 use error::{Error, Result};
 use stackexchange::{LocalStorage, Question, Search};
-use term::mk_print_error;
 use tui::markdown::Markdown;
 
 fn main() -> Result<()> {
@@ -23,7 +22,7 @@ fn main() -> Result<()> {
     let mut skin = MadSkin::default();
     skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
     skin.code_block.compound_style = CompoundStyle::with_fg(Color::Cyan);
-    let mut print_error = mk_print_error(&skin);
+    let mut print_error = term::mk_print_error(&skin);
 
     // Tokio runtime
     let mut rt = Runtime::new()?;
@@ -84,17 +83,21 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     if let Some(q) = opts.query {
         let mut search = Search::new(config, ls, q);
         if lucky {
-            let md = search.search_lucky().await?;
+            // Show top answer
+            let md = term::wrap_spinner(search.search_lucky()).await??;
             skin.print_text(&md);
             skin.print_text("\nPress **[SPACE]** to see more results, or any other key to exit");
+
             // Kick off the rest of the search in the background
             let qs = task::spawn(async move { search.search_md().await });
-            if !utils::wait_for_char(' ')? {
+            if !term::wait_for_char(' ')? {
                 return Ok(None);
             }
-            return Ok(Some(qs.await.unwrap()?));
+
+            // Get the rest of the questions
+            return Ok(Some(term::wrap_spinner(qs).await?.unwrap()?));
         } else {
-            return Ok(Some(search.search_md().await?));
+            return Ok(Some(term::wrap_spinner(search.search_md()).await??));
         }
     }
     Ok(None)
