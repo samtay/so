@@ -140,7 +140,6 @@ fn pretty_score(score: i32) -> StyledString {
 }
 
 // This would be a good usecase for brining in termimad tables
-// TODO dont parse this at runtime, just hardcode it (or include_str)
 pub fn help() -> Dialog {
     let bindings = r###"
 ## Panes

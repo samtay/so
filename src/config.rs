@@ -96,7 +96,7 @@ pub fn theme_file_name() -> Result<PathBuf> {
     let name = project_dir()?.config_dir().join("colors.toml");
     if !name.as_path().exists() {
         let mut file = utils::create_file(&name)?;
-        file.write_all(DEFAULT_COLORS_TOML.as_bytes())?;
+        file.write_all(include_str!("../themes/default.toml").as_bytes())?;
     }
     Ok(name)
 }
@@ -111,44 +111,3 @@ fn write_config(config: &Config) -> Result<()> {
 fn config_file_name() -> Result<PathBuf> {
     Ok(project_dir()?.config_dir().join("config.yml"))
 }
-
-static DEFAULT_COLORS_TOML: &str = r##"
-# Every field in a theme file is optional.
-
-shadow = false
-borders = "outset" # Alternatives are "none" and "simple"
-
-# Base colors are
-# red, green, blue, cyan, magenta, yellow, white and black.
-#
-# There are 3 ways to select a color:
-# - The 16 base colors are selected by name:
-#       "blue", "light red", "magenta", ...
-# - Low-resolution colors use 3 characters, each <= 5:
-#       "541", "003", ...
-# - Full-resolution colors start with '#' and can be 3 or 6 hex digits:
-#       "#1A6", "#123456", ...
-[colors]
-background = "default"
-
-# If the terminal doesn't support custom color (like the linux TTY),
-# non-base colors will be skipped.
-shadow     = []
-view       = "default"
-
-# An array with a single value has the same effect as a simple value.
-primary   = ["default"]
-secondary = "cyan" # secondary style is used for code hightlighting
-tertiary  = "green"
-
-# Hex values can use lower or uppercase.
-# (base color MUST be lowercase)
-# If the value is an array, the first valid
-# and supported color will be used.
-title_primary   = ["BLUE", "red"] # `BLUE` will be skipped.
-title_secondary = "yellow"
-
-# Lower precision values can use only 3 digits.
-highlight          = "yellow"
-highlight_inactive = "light yellow"
-"##;
