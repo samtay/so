@@ -7,8 +7,6 @@
 
 ### bugs
 1. Shift+TAB should move focus backwards
-2. Why does `so -e stackexchange -s stackoverflow how do i exit vim`  result in
-   different results than `so -e stackexchange -s stackoverflow "how do i exit vim"`?
 3. Make highlight take precedence over md styling in answer preview
 
 ### feature ideas
