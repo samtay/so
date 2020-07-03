@@ -4,7 +4,6 @@ use crate::config;
 use crate::config::Config;
 use crate::error::Result;
 
-// TODO --sites plural
 // TODO --add-site (in addition to defaults)
 pub struct Opts {
     pub list_sites: bool,
@@ -127,5 +126,6 @@ pub fn get_opts() -> Result<Opts> {
     })
 }
 
-// TODO how can I test this App given https://users.rust-lang.org/t/help-with-idiomatic-rust-and-ownership-semantics/43880
-// Maybe pass get_opts a closure that produces the Config...
+// TODO how can I test this App given
+// https://users.rust-lang.org/t/help-with-idiomatic-rust-and-ownership-semantics/43880
+// Maybe pass get_opts a closure that produces the Config...?

@@ -9,7 +9,7 @@ use crate::error::{Error, Result};
 use crate::utils;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")] // TODO test this
+#[serde(rename_all = "lowercase")]
 pub enum SearchEngine {
     DuckDuckGo,
     Google,

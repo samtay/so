@@ -86,8 +86,6 @@ impl Scraper for Google {
         limit: u16,
     ) -> Result<ScrapedData> {
         let anchors = Selector::parse("div.r > a").unwrap();
-        // TODO detect no results
-        // TODO detect blocked request
         parse_with_selector(anchors, html, sites, limit)
     }
 
@@ -130,7 +128,6 @@ where
     q
 }
 
-// TODO Benchmark this. It would likely be faster to use regex on the decoded url.
 fn parse_with_selector(
     anchors: Selector,
     html: &str,
@@ -193,6 +190,7 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
 }
 
 // TODO  Get blocked google request html
+// TODO Get google no results html
 // note: this may only be possible at search.rs level (with non-200 code)
 #[cfg(test)]
 mod tests {
@@ -357,7 +355,6 @@ mod tests {
         assert_eq!(question_url_to_id(site_url, input), None);
 
         // Different site
-        // TODO get this to pass; then test tagged.html
         let site_url = "meta.stackexchange.com";
         let input = "/l/?kh=-1&uddg=https://math.meta.stackexchange.com/q/11828270";
         assert_eq!(question_url_to_id(site_url, input), None);
