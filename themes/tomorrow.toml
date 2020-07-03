@@ -12,3 +12,4 @@ title_primary   = ["#c82829", "red"]
 title_secondary = ["#eab700", "yellow"]
 highlight          = "#eab700"
 highlight_inactive = "#d6d6d6"
+highlight_text     = "#4d4d4c"
