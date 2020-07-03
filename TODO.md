@@ -4,10 +4,10 @@
 1. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 2. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 3. Release on AUR & Homebrew
+4. Clean up term.rs ; only keep what's actually ergonomic
 
 ### bugs
 1. Shift+TAB should move focus backwards
-3. Make highlight take precedence over md styling in answer preview
 
 ### feature ideas
 - Add sort option, e.g. relevance|votes|date

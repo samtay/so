@@ -35,7 +35,8 @@ pub fn preprocess(input: String) -> String {
 }
 
 /// Preview markdown of the given length
-/// **Note**: Assumes preprocessing has taken place
+/// Currently removes any color (i.e. code highlighting) to avoid
+/// the jarring issue of a fragmented highlight style on focused items.
 pub fn preview(width: usize, input: &StyledString) -> StyledString {
     let mut w = 0;
     let mut new_spans = Vec::new();
@@ -43,14 +44,14 @@ pub fn preview(width: usize, input: &StyledString) -> StyledString {
         // Filter newlines
         if span.width == 0 {
             w += 1;
-            new_spans.push(IndexedSpan {
+            new_spans.push(drop_color(IndexedSpan {
                 content: IndexedCow::Owned(" ".to_owned()),
                 width: 1,
                 ..*span
-            });
+            }));
         } else {
             w += span.width;
-            new_spans.push(span.clone());
+            new_spans.push(drop_color(span.clone()));
         }
         if w > width {
             break;
@@ -59,6 +60,16 @@ pub fn preview(width: usize, input: &StyledString) -> StyledString {
     let mut prev = StyledString::with_spans(input.source(), new_spans);
     prev.append_plain("...");
     prev
+}
+
+fn drop_color(span: StyledIndexedSpan) -> StyledIndexedSpan {
+    IndexedSpan {
+        attr: Style {
+            color: None,
+            ..span.attr
+        },
+        ..span
+    }
 }
 
 /// Parse the given markdown text into a list of spans.

@@ -34,6 +34,5 @@
  also bring up an advanced search form that allows mutliselect of sites, select
  search engine, etc.
  - [ ] or `/` searches current q/a
- - [ ] clean up dingleberries in error.rs and term.rs ; only keep what's actually ergonomic
  - [ ] per platform package mgmt
  - [ ] more testing
