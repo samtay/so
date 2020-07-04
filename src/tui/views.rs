@@ -538,6 +538,9 @@ impl<T: View> ViewWrapper for VimBindingsView<T> {
             _ => self.last_event = None,
         }
         match event {
+            Event::Char('q') => {
+                return EventResult::with_cb(|s| s.quit());
+            }
             Event::Char('h') => {
                 return self.view.on_event(Event::Key(Key::Left));
             }
