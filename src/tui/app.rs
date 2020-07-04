@@ -156,7 +156,7 @@ pub fn help() -> Dialog {
 **G**:       Scroll To Bottom
 
 ## Misc
-**ZZ, Ctrl<c>**: Exit
+**q, ZZ, Ctrl<c>**: Exit
 **?**:           Toggle this help menu
 "###;
     Dialog::around(
