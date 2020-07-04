@@ -157,7 +157,7 @@ pub fn help() -> Dialog {
 
 ## Misc
 **q, ZZ, Ctrl<c>**: Exit
-**?**:           Toggle this help menu
+**?**:              Toggle this help menu
 "###;
     Dialog::around(
         TextView::new(markdown::parse(bindings))
