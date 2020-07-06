@@ -41,26 +41,28 @@ $ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
 
 ## installation
 
-### release binaries
-The quickest installation method is to download the appropriate
-binary from the [release artifacts](https://github.com/samtay/so/releases).
-You can quickly
-install the binary for common targets (Linux, MacOS, Windows) to directory
-`DEST` with:
+#### Arch Linux
+You can install the AUR package [so-git](https://aur.archlinux.org/packages/so-git/)
+```
+yay -S so-git
+```
+#### MacOS
+You can install via homebrew
+```
+brew install samtay/tui/so
+```
+
+#### cargo
+```
+cargo install so
+```
+
+#### release binaries
+Static binaries are available on the [releases page](https://github.com/samtay/so/releases) for common Linux, MacOS, and Windows targets. You can quickly install the one you need to directory `DEST` with:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh \
   | bash -s -- --to DEST
 ```
-Note: you may need extra permissions for certain paths, e.g.
-```bash
-# install to /usr/local/bin
-curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh \
-  | bash -s -- --to . && sudo mv so /usr/local/bin
-```
-And of course, you may want to `curl https://samtay.github.io/so/install.sh`
-first and make sure you're comfortable executing it. You can also view it
-[here](./docs/install.sh).
-
 Right now I'm only building the most common targets, but in theory it should be
 easy to add more, so if you don't see what you are looking for just open an
 issue and I can add it. Here's a
@@ -68,14 +70,6 @@ list of the [supported
 targets](https://github.com/japaric/trust#supported-targets). If you don't know
 what you need, you can install [rustc](https://www.rust-lang.org/tools/install)
 and open an issue with the output of `rustc -Vv | grep host | cut -d' ' -f2`.
-
-### cargo
-```
-cargo install so
-```
-
-### os packages
-Coming soon. Help appreciated!
 
 ## documentation
 
@@ -85,7 +79,7 @@ directories:
 
 - Linux: `/home/alice/.config/so`
 - Windows: `C:\Users\Alice\AppData\Roaming\Sam Tay\so`
-- MacOS: `/Users/Alice/Library/Application Support/io.Sam-Tay.so`
+- MacOS: `/Users/Alice/Library/Preferences/io.Sam-Tay.so`
 
 #### defaults
 The `config.yml` file let's you specify your CLI defaults. So if you dislike the
@@ -107,8 +101,7 @@ Run `so --help` to see your current defaults.
 #### themes
 In the same directory you'll find `colors.toml` which is self-documented. The
 default theme attempts to blend in with your default terminal theme, but you can
-change it as necessary. There are some themes in the [themes](./themes)
-directory as well.
+change it as necessary. In particular, you may want to change the `highlight_text` if the current selection is difficult to read. There are some themes in the [themes](./themes) directory as well.
 
 #### api keys
 If you want to use your own [StackExchange API
