@@ -37,4 +37,4 @@ title_secondary = "yellow"
 highlight          = "yellow"
 highlight_inactive = "light yellow"
 # Note: you may want to change hightlight_text for darker terminal themes.
-highlight_text     = "default" # or "black"
+highlight_text     = "black" # or "default"
