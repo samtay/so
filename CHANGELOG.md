@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 - *Keybinding*: Press `q` to quit ([#1](https://github.com/samtay/so/pull/1)).
   Thanks [@zynaxsoft](https://github.com/zynaxsoft)!
-- Arch Linux installation option: [so-git](https://aur.archlinux.org/packages/so-git/)
+- Arch Linux installation options: [so](https://aur.archlinux.org/packages/so/)
+  and [so-git](https://aur.archlinux.org/packages/so-git/)
 - Homebrew installation option: [samtay/tui/so](https://github.com/samtay/homebrew-tui)
 - This changelog
 #### Changed

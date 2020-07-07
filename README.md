@@ -29,7 +29,7 @@ differentiates it from [similar](https://github.com/santinic/how2)
 [tools](https://github.com/gleitz/howdoi) is that you can simultaneously search
 any number of sites in the StackExchange network:
 ```shell
-# search using default configuration
+# search using your default configuration
 $ so how do i reverse a list in python
 
 # search for a latex solution
@@ -42,7 +42,10 @@ $ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
 ## installation
 
 #### Arch Linux
-You can install the AUR package [so-git](https://aur.archlinux.org/packages/so-git/)
+You can install the AUR package
+[so](https://aur.archlinux.org/packages/so/) (tracks latest release)
+or
+[so-git](https://aur.archlinux.org/packages/so-git/) (tracks master), e.g.
 ```
 yay -S so-git
 ```
