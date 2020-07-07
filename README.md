@@ -55,13 +55,33 @@ You can install the homebrew [formula](https://formulae.brew.sh/formula/so)
 brew install so
 ```
 
-#### cargo
-```
-cargo install so
+#### Windows
+If you have [scoop](https://scoop.sh/) you can install via the extras bucket:
+```shell
+# add extras bucket
+scoop bucket add extras
+
+# install so
+scoop install so
 ```
 
+#### from source
+For any OS you can install the crate [so](https://crates.io/crates/so) directly:
+```
+# everything but windows
+cargo install so
+
+# windows
+cargo install so --no-default-features --features windows
+```
+For more information on the feature flags, see [selecting a
+backend](#selecting-a-backend).
+
 #### release binaries
-Static binaries are available on the [releases page](https://github.com/samtay/so/releases) for common Linux, MacOS, and Windows targets. You can quickly install the one you need to directory `DEST` with:
+Static binaries are available on the [releases
+page](https://github.com/samtay/so/releases) for common Linux, MacOS, and
+Windows targets. You can quickly install the one you need to directory `DEST`
+with:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://samtay.github.io/so/install.sh \
   | bash -s -- --to DEST

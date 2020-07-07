@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Added
+- Windows installation option
+  [lukesampson/scoop-extras#4376](https://github.com/lukesampson/scoop-extras/pull/4376).
+  Thanks [@laralex](https://github.com/laralex)!
+
 ### [v0.4.1](https://github.com/samtay/so/compare/v0.4.0...v0.4.1) (2020-07-10)
 
 #### Added
