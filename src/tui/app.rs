@@ -157,6 +157,7 @@ pub fn help() -> Dialog {
 
 ## Misc
 **q, ZZ, Ctrl<c>**: Exit
+**Ctrl<r>**:        Reload theme
 **?**:              Toggle this help menu
 "###;
     Dialog::around(
