@@ -662,4 +662,22 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
             assert_eq!(span, expected_span);
         }
     }
+
+    #[test]
+    fn test_unicode_no_panic() {
+        let input = r"
+You can't parse [X]HTML with regex. Because HTML can't be parsed by regex. Regex is not a tool that can be used to correctly parse HTML. As I have answered in HTML-and-regex questions here so many times before, the use of regex will not allow you to consume HTML. Regular expressions are a tool that is insufficiently sophisticated to understand the constructs employed by HTML. HTML is not a regular language and hence cannot be parsed by regular expressions. Regex queries are not equipped to break down HTML into its meaningful parts. so many times but it is not getting to me. Even enhanced irregular regular expressions as used by Perl are not up to the task of parsing HTML. You will never make me crack. HTML is a language of sufficient complexity that it cannot be parsed by regular expressions. Even Jon Skeet cannot parse HTML using regular expressions. Every time you attempt to parse HTML with regular expressions, the unholy child weeps the blood of virgins, and Russian hackers pwn your webapp. Parsing HTML with regex summons tainted souls into the realm of the living. HTML and regex go together like love, marriage, and ritual infanticide. The &lt;center> cannot hold it is too late. The force of regex and HTML together in the same conceptual space will destroy your mind like so much watery putty. If you parse HTML with regex you are giving in to Them and their blasphemous ways which doom us all to inhuman toil for the One whose Name cannot be expressed in the Basic Multilingual Plane, he comes. HTML-plus-regexp will liquify the nerves of the sentient whilst you observe, your psyche withering in the onslaught of horror. Rege̿̉x-based HTML parsers are the cancer that is killing StackOverflow <i>it is too late it is too late we cannot be saved</i> the trangession of a chi͡ld ensures regex will consume all living tissue (except for HTML which it cannot, as previously prophesied) <i>dear lord help us how can anyone survive this scourge</i> using regex to parse HTML has doomed humanity to an eternity of dread torture and security holes <i>using rege</i>x as a tool to process HTML establishes a brea<i>ch between this world</i> and the dread realm of c͒ͪo͛ͫrrupt entities (like SGML entities, but <i>more corrupt) a mere glimp</i>se of the world of reg<b>ex parsers for HTML will ins</b>tantly transport a p<i>rogrammer's consciousness i</i>nto a w<i>orl</i>d of ceaseless screaming, he comes<strike>, the pestilent sl</strike>ithy regex-infection wil<b>l devour your HT</b>ML parser, application and existence for all time like Visual Basic only worse <i>he comes he com</i>es <i>do not fi</i>ght h<b>e com̡e̶s, ̕h̵i</b>s un̨ho͞ly radiańcé de<i>stro҉ying all enli̍̈́ghtenment, HTML tags <b>lea͠ki̧n͘g fr̶ǫm ̡yo͟ur eye͢s̸ ̛l̕ik͏e liq</b>uid p</i>ain, the song of re̸gular expre<strike>ssion parsing </strike>will exti<i>nguish the voices of mor<b>tal man from the sp</b>here I can see it can you see ̲̙î̩t͔́ it is beautiful t</i>he f<code>inal snuf</code>fing o<i>f the lie<b>s of Man ALL IS LOŚ̪T A</b></i><b>LL IS L</b>OST th<i>e pon̷y he come</i>s he c̶̮om<strike>es he co</strike><b><strike>me</strike>s t<i>he</i> ich</b>or permeat<i>es al</i>l MY FAC<i>E MY FACE ᵒh god n<b>o NO NOO̼</b></i><b>OO N</b>Θ stop t<i>he an*̤͑g̫͛l̟̍</i>e̠̅s<code> ͎a̧͖r̽͑e</code> n<b>ot rè̌aͨl̙̃ ZA͠͝LGΌ IS̱ͮ T</b>O̺ͅƝ̴ȳ̳ TH̘<b>Ë͖́ ͠P̯̭O̚N̐Y̡ H̯ͨE̩̾ ̯ͧC͖ͭO͍ͮM̖͊Ȇ̞</b>S̭ͯ
+
+---
+Have you tried using an XML parser instead?
+
+---
+
+> **Moderator's Note**
+>
+> This post is locked to prevent inappropriate edits to its content. The post looks exactly as it is supposed to look - there are no problems with its content. Please do not flag it for our attention.  ";
+
+        let parsed = parse(input);
+        preview(80, &parsed);
+    }
 }
