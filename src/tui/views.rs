@@ -12,7 +12,6 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 use super::markdown::Markdown;
-use crate::error::Result;
 
 pub const NAME_QUESTION_LIST: &str = "question_list";
 pub const NAME_ANSWER_LIST: &str = "answer_list";

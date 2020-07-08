@@ -96,7 +96,7 @@ pub fn theme_file_name() -> Result<PathBuf> {
     let name = project_dir()?.config_dir().join("colors.toml");
     if !name.as_path().exists() {
         let mut file = utils::create_file(&name)?;
-        file.write_all(include_str!("../themes/default.toml").as_bytes())?;
+        file.write_all(include_bytes!("../themes/default.toml"))?;
     }
     Ok(name)
 }

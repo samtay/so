@@ -78,19 +78,14 @@ pub fn spinner() -> (Sender<()>, JoinHandle<Result<()>>) {
             terminal::Clear(ClearType::CurrentLine),
         )?;
         let mut interval = time::interval(time::Duration::from_millis(LOADING_SPINNER_DELAY));
-        loop {
-            match rx.try_recv() {
-                Err(TryRecvError::Empty) => {
-                    execute!(
-                        stderr(),
-                        cursor::MoveToColumn(0),
-                        terminal::Clear(ClearType::CurrentLine),
-                        Print(dots.next().unwrap())
-                    )?;
-                    interval.tick().await;
-                }
-                _ => break,
-            }
+        while let Err(TryRecvError::Empty) = rx.try_recv() {
+            execute!(
+                stderr(),
+                cursor::MoveToColumn(0),
+                terminal::Clear(ClearType::CurrentLine),
+                Print(dots.next().unwrap())
+            )?;
+            interval.tick().await;
         }
         execute!(
             stderr(),
