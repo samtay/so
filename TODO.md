@@ -3,8 +3,11 @@
 ### chores
 1. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 2. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
-3. Release on AUR & Homebrew
-4. Clean up term.rs ; only keep what's actually ergonomic
+3. Refactor `term` module to export a sruct `Term` with a stateful madskin;
+   this would clean up `main`.
+4. Move to `directories 3.0`; optionally migrate existing macos configs? Not
+   many people using this anyway...
+5. Add github action to bump homebrew formula on tag push
 
 ### bugs
 1. Shift+TAB should move focus backwards
@@ -29,11 +32,10 @@ benefit of incorporating termimad features into a cursive view will not be felt.
 But, this is changing [soon](https://meta.stackexchange.com/q/348746).
 
 ### resources for later
-- [Trust example](https://github.com/badboy/signify-rs)
+- [GA - bump homebrew](https://github.com/mislav/bump-homebrew-formula-action)
 - [Github Actions example](https://github.com/extrawurst/gitui)
 - [another GA example](https://github.com/casey/just)
 - [logging example](https://deterministic.space/rust-cli-tips.html)
-- [PKGBUILD example](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=gitui) + openssl dep
 - More mock user agents
   - `Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0`
   - `Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0`
