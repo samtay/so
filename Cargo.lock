@@ -17,9 +17,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94e200a506d98f285fcd550bd2b0e5eacdfd53775e6d3aefaf2781571aabfe6f"
+checksum = "5ce6598c0a42bbb2485089f93d8dc28b31ff906ddb643c01a49fe3373d335e8e"
 dependencies = [
  "const-random",
 ]
@@ -470,7 +470,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85fc5b6a8ba2f1bc743892068bde466438f78d6247197e2dc094bfd53fdea4b7"
 dependencies = [
- "ahash 0.4.0",
+ "ahash 0.4.1",
  "chrono",
  "crossbeam-channel",
  "enum-map",
@@ -1018,9 +1018,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.71"
+version = "0.2.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9457b06509d27052635f90d6466700c65095fdf75409b3fbdd903e988b886f49"
+checksum = "a9f8082297d534141b30c8d39e9b1773713ab50fdbe4ff30f750d063b3bfd701"
 
 [[package]]
 name = "linked-hash-map"
@@ -2048,7 +2048,7 @@ checksum = "3757cb9d89161a2f24e1cf78efa0c1fcff485d18e3f55e0aa3480824ddaa0f3f"
 
 [[package]]
 name = "so"
-version = "0.3.6"
+version = "0.4.0"
 dependencies = [
  "clap",
  "criterion",
