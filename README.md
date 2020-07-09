@@ -50,9 +50,9 @@ or
 yay -S so-git
 ```
 #### MacOS
-You can install via homebrew
+You can install the homebrew [formula](https://formulae.brew.sh/formula/so)
 ```
-brew install samtay/tui/so
+brew install so
 ```
 
 #### cargo

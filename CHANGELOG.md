@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Changed
+- Homebrew installation method: core
+  [formula](https://formulae.brew.sh/formula/so) now available
+
 ### [v0.4.0](https://github.com/samtay/so/compare/v0.3.6...v0.4.0) (2020-07-07)
 
 #### Added
@@ -21,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### [v0.3.6](https://github.com/samtay/so/compare/v0.3.5...v0.3.6) (2020-07-02)
 
 #### Added
-- Add CLI spinner
+- CLI spinner
 #### Fixed
-- Fix fragmented highlighting styles
+- Fragmented highlighting styles
 
 ### [v0.3.5](https://github.com/samtay/so/compare/030cd70...v0.3.5) (2020-06-30)
 - (Unofficial) initial passable release
