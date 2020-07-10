@@ -78,13 +78,6 @@ fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
     Parser::new(input).collect()
 }
 
-/// Cheat my way through cursive's obscure crap
-//fn build_output(spans: Vec<StyledIndexedSpan>) -> String {
-//spans.iter().fold("", |mut o, s| {
-//o += s.content.to_string();
-//})
-//}
-
 /// Iterator that parse a markdown text and outputs styled spans.
 pub struct Parser<'a> {
     first: bool,
