@@ -15,7 +15,7 @@ use super::views::{
     LayoutView, ListView, MdView, Name, Vimable, NAME_ANSWER_LIST, NAME_ANSWER_VIEW,
     NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
 };
-use crate::config;
+use crate::config::Config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
 
@@ -23,7 +23,7 @@ pub const NAME_HELP_VIEW: &str = "help_view";
 
 pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     let mut siv = cursive::default();
-    siv.load_theme_file(config::theme_file_name()?).unwrap(); // TODO dont unwrap
+    siv.load_theme_file(Config::theme_file_path()?).unwrap(); // TODO dont unwrap
 
     let question_map: HashMap<u32, Question<Markdown>> =
         qs.clone().into_iter().map(|q| (q.id, q)).collect();
@@ -76,7 +76,7 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     });
     // Reload theme
     siv.add_global_callback(Event::CtrlChar('r'), |s| {
-        s.load_theme_file(config::theme_file_name().unwrap())
+        s.load_theme_file(Config::theme_file_path().unwrap())
             .unwrap()
     });
     siv.run();

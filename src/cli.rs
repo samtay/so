@@ -1,12 +1,12 @@
 use clap::{App, AppSettings, Arg};
 
-use crate::config;
 use crate::config::Config;
 use crate::error::Result;
 
 // TODO --add-site (in addition to defaults)
 pub struct Opts {
     pub list_sites: bool,
+    pub print_config_path: bool,
     pub update_sites: bool,
     pub set_api_key: Option<String>,
     pub query: Option<String>,
@@ -14,7 +14,7 @@ pub struct Opts {
 }
 
 pub fn get_opts() -> Result<Opts> {
-    let config = config::user_config()?;
+    let config = Config::new()?;
     let limit = &config.limit.to_string();
     let sites = &config.sites.join(";");
     let engine = &config.search_engine.to_string();
@@ -40,6 +40,12 @@ pub fn get_opts() -> Result<Opts> {
                 .takes_value(true)
                 .value_name("key")
                 .help("Set StackExchange API key"),
+        )
+        .arg(
+            Arg::with_name("print-config-path")
+                .long("print-config-path")
+                .help("Print path to config file")
+                .hidden(true),
         )
         .arg(
             Arg::with_name("site")
@@ -79,7 +85,12 @@ pub fn get_opts() -> Result<Opts> {
             Arg::with_name("query")
                 .multiple(true)
                 .index(1)
-                .required_unless_one(&["list-sites", "update-sites", "set-api-key"]),
+                .required_unless_one(&[
+                    "list-sites",
+                    "update-sites",
+                    "set-api-key",
+                    "print-config-path",
+                ]),
         )
         .arg(
             Arg::with_name("search-engine")
@@ -101,6 +112,7 @@ pub fn get_opts() -> Result<Opts> {
     };
     Ok(Opts {
         list_sites: matches.is_present("list-sites"),
+        print_config_path: matches.is_present("print-config-path"),
         update_sites: matches.is_present("update-sites"),
         set_api_key: matches.value_of("set-api-key").map(String::from),
         query: matches

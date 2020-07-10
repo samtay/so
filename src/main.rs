@@ -13,6 +13,7 @@ use termimad::{CompoundStyle, MadSkin};
 use tokio::runtime::Runtime;
 use tokio::task;
 
+use config::Config;
 use error::{Error, Result};
 use stackexchange::{LocalStorage, Question, Search};
 use tui::markdown::Markdown;
@@ -49,7 +50,11 @@ async fn run(skin: &mut MadSkin) -> Result<Option<Vec<Question<Markdown>>>> {
     let ls = LocalStorage::new(opts.update_sites).await?;
 
     if let Some(key) = opts.set_api_key {
-        config::set_api_key(key)?;
+        Config::set_api_key(key)?;
+    }
+
+    if opts.print_config_path {
+        println!("{}", Config::config_file_path()?.display());
     }
 
     if opts.list_sites {

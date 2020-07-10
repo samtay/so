@@ -56,58 +56,63 @@ impl Default for Config {
     }
 }
 
-/// Get user config (writes default if none found)
-pub fn user_config() -> Result<Config> {
-    let project = project_dir()?;
-    let dir = project.config_dir();
-    fs::create_dir_all(&dir)?;
-    let filename = config_file_name()?;
+impl Config {
+    /// Get user config (writes default if none found)
+    pub fn new() -> Result<Self> {
+        let project = Self::project_dir()?;
+        let dir = project.config_dir();
+        fs::create_dir_all(&dir)?;
+        let filename = Self::config_file_path()?;
 
-    match utils::open_file(&filename)? {
-        None => {
-            let def = Config::default();
-            write_config(&def)?;
-            Ok(def)
+        match utils::open_file(&filename)? {
+            None => {
+                let def = Config::default();
+                def.write()?;
+                Ok(def)
+            }
+            Some(file) => serde_yaml::from_reader(file)
+                .map_err(|_| Error::MalformedFile(filename.clone()))
+                .and_then(|cfg: Config| {
+                    if cfg.sites.is_empty() {
+                        Err(Error::MalformedFile(filename))
+                    } else {
+                        Ok(cfg)
+                    }
+                }),
         }
-        Some(file) => serde_yaml::from_reader(file)
-            .map_err(|_| Error::MalformedFile(filename.clone()))
-            .and_then(|cfg: Config| {
-                if cfg.sites.is_empty() {
-                    Err(Error::MalformedFile(filename))
-                } else {
-                    Ok(cfg)
-                }
-            }),
     }
-}
 
-pub fn set_api_key(key: String) -> Result<()> {
-    let mut cfg = user_config()?;
-    cfg.api_key = Some(key);
-    write_config(&cfg)
-}
-
-/// Get project directory
-pub fn project_dir() -> Result<ProjectDirs> {
-    ProjectDirs::from("io", "Sam Tay", "so").ok_or_else(|| Error::ProjectDir)
-}
-
-pub fn theme_file_name() -> Result<PathBuf> {
-    let name = project_dir()?.config_dir().join("colors.toml");
-    if !name.as_path().exists() {
-        let mut file = utils::create_file(&name)?;
-        file.write_all(include_bytes!("../themes/default.toml"))?;
+    // TODO This looks odd when refactoring to associate functions under Config; perhaps this
+    // shouldn't be a CLI opt? Maybe a generic --save-config based on current opts?
+    pub fn set_api_key(key: String) -> Result<()> {
+        let mut cfg = Self::new()?;
+        cfg.api_key = Some(key);
+        cfg.write()
     }
-    Ok(name)
-}
 
-fn write_config(config: &Config) -> Result<()> {
-    let filename = config_file_name()?;
-    let file = utils::create_file(&filename)?;
-    Ok(serde_yaml::to_writer(file, config)?)
-}
+    /// Get project directory
+    pub fn project_dir() -> Result<ProjectDirs> {
+        ProjectDirs::from("io", "Sam Tay", "so").ok_or_else(|| Error::ProjectDir)
+    }
 
-// TODO consider switching to .toml to be consistent with colors.toml
-fn config_file_name() -> Result<PathBuf> {
-    Ok(project_dir()?.config_dir().join("config.yml"))
+    // TODO consider switching to .toml to be consistent with colors.toml
+    pub fn config_file_path() -> Result<PathBuf> {
+        Ok(Self::project_dir()?.config_dir().join("config.yml"))
+    }
+
+    /// Get theme file path; if it doesn't exist yet, create it with defaults.
+    pub fn theme_file_path() -> Result<PathBuf> {
+        let name = Self::project_dir()?.config_dir().join("colors.toml");
+        if !name.as_path().exists() {
+            let mut file = utils::create_file(&name)?;
+            file.write_all(include_bytes!("../themes/default.toml"))?;
+        }
+        Ok(name)
+    }
+
+    fn write(&self) -> Result<()> {
+        let filename = Self::config_file_path()?;
+        let file = utils::create_file(&filename)?;
+        Ok(serde_yaml::to_writer(file, &self)?)
+    }
 }

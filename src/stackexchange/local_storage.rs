@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::config::project_dir;
+use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::utils;
 
@@ -40,7 +40,7 @@ impl LocalStorage {
     }
 
     pub async fn new(update: bool) -> Result<Self> {
-        let project = project_dir()?;
+        let project = Config::project_dir()?;
         let dir = project.cache_dir();
         fs::create_dir_all(&dir)?;
         let sites_filename = dir.join("sites.json");
