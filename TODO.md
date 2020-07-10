@@ -1,13 +1,14 @@
 # TODO
 
 ### chores
-1. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
-2. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
-3. Refactor `term` module to export a sruct `Term` with a stateful madskin;
-   this would clean up `main`.
+1. Add test for clap app
+2. Add significant cursive TUI test
+3. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 4. Move to `directories 3.0`; optionally migrate existing macos configs? Not
    many people using this anyway...
 5. Add github action to bump homebrew formula on tag push
+6. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
+
 
 ### bugs
 1. Shift+TAB should move focus backwards

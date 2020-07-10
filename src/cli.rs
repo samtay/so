@@ -13,6 +13,7 @@ pub struct Opts {
     pub config: Config,
 }
 
+// TODO accept FnOnce() -> Result<Config> so I can test this
 pub fn get_opts() -> Result<Opts> {
     let config = Config::new()?;
     let limit = &config.limit.to_string();
