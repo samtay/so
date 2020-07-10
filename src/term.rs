@@ -7,7 +7,7 @@ use std::io::{stderr, Write};
 use termimad::{CompoundStyle, MadSkin};
 use tokio::sync::{
     oneshot,
-    oneshot::{error::TryRecvError, Sender},
+    oneshot::{error::TryRecvError, Sender, Receiver},
 };
 use tokio::task::JoinHandle;
 use tokio::time;
@@ -30,6 +30,11 @@ impl Default for Term {
     fn default() -> Self {
         Term::new()
     }
+}
+
+struct Spinner {
+    tx: Sender<()>,
+    handle: JoinHandle<Result<()>>
 }
 
 impl Term {
@@ -101,23 +106,36 @@ impl Term {
         F: Future,
     {
         // Start spinner
-        let (tx, spinner_handle) = Self::spinner();
+        let spinner = Spinner::new();
 
         let result = future.await;
 
         // Stop spinner
-        tx.send(()).ok();
-        spinner_handle.await??;
+        spinner.stop().await?;
 
         Ok(result)
     }
+}
 
-    /// Start a CLI spinner on the current cursor line. To stop it, call `send` on the `Sender`. To
-    /// wait until it's done cleaning up it's current action (which is very important), await it's
-    /// `JoinHandle`.
-    fn spinner() -> (Sender<()>, JoinHandle<Result<()>>) {
-        let (tx, mut rx) = oneshot::channel();
-        let spinner_handle = tokio::spawn(async move {
+impl Spinner {
+    /// Start a CLI spinner on the current cursor line. To stop it, call `stop` on the returned
+    /// `Spinner`.
+    pub fn new() -> Self {
+        let (tx, rx) = oneshot::channel();
+        let handle = tokio::spawn(Self::spin(rx));
+        Spinner {tx, handle}
+    }
+
+    /// Stop the spinner. This requires a bit of cleanup, and so should be `await`ed before doing
+    /// any other i/o.
+    pub async fn stop(self) -> Result<()> {
+        self.tx.send(()).ok();
+        self.handle.await??;
+        Ok(())
+    }
+
+    /// Spin until receiver finds unit
+    async fn spin(mut rx: Receiver<()>) -> Result<()> {
             let mut dots = LOADING_SPINNER_DOTS.iter().cycle();
             terminal::enable_raw_mode()?;
             execute!(
@@ -144,8 +162,6 @@ impl Term {
             )?;
             terminal::disable_raw_mode()?;
             Ok(())
-        });
-        (tx, spinner_handle)
     }
 }
 
