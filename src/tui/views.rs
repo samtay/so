@@ -381,7 +381,6 @@ impl LayoutView {
         self.call_on_md_views(move |v| v.resize(&width, &view_height));
     }
 
-    // TODO separate out resizing | relayout | refocus; these are separate
     // concerns and should have their own methods of invalidation
     fn relayout(&mut self) {
         match self.layout {
@@ -406,25 +405,7 @@ impl LayoutView {
                     v.set_width(&SizeConstraint::Full);
                     v.set_take_focus(true);
                 });
-                let name = Self::xy_to_name(self.get_focused_index());
-                if name == NAME_QUESTION_LIST || name == NAME_QUESTION_VIEW {
-                    self.view
-                        .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
-                            v.unhide();
-                        });
-                    self.view
-                        .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
-                            v.unhide();
-                        });
-                } else {
-                    self.view
-                        .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
-                            v.unhide();
-                        });
-                    self.view.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
-                        v.unhide();
-                    });
-                }
+                self.refocus();
             }
             Layout::FullScreen => {
                 self.call_on_md_views(|v| {
@@ -437,17 +418,44 @@ impl LayoutView {
                     v.hide();
                     v.resize(&SizeConstraint::Full, &SizeConstraint::Full);
                 });
-                let name = Self::xy_to_name(self.get_focused_index());
-                if name == NAME_QUESTION_LIST || name == NAME_ANSWER_LIST {
-                    self.view.call_on_name(name, |v: &mut ListView| {
-                        v.unhide();
-                    });
-                } else {
-                    self.view.call_on_name(name, |v: &mut MdView| {
-                        v.unhide();
-                    });
-                }
+                self.refocus();
             }
+        }
+    }
+
+    fn refocus(&mut self) {
+        let name = Self::xy_to_name(self.get_focused_index());
+        match self.layout {
+            Layout::SingleColumn if name == NAME_QUESTION_LIST || name == NAME_QUESTION_VIEW => {
+                self.view
+                    .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
+                        v.unhide();
+                    });
+                self.view
+                    .call_on_name(NAME_QUESTION_VIEW, |v: &mut MdView| {
+                        v.unhide();
+                    });
+            }
+            Layout::SingleColumn => {
+                self.view
+                    .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
+                        v.unhide();
+                    });
+                self.view.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| {
+                    v.unhide();
+                });
+            }
+            Layout::FullScreen if name == NAME_QUESTION_LIST || name == NAME_ANSWER_LIST => {
+                self.view.call_on_name(name, |v: &mut ListView| {
+                    v.unhide();
+                });
+            }
+            Layout::FullScreen => {
+                self.view.call_on_name(name, |v: &mut MdView| {
+                    v.unhide();
+                });
+            }
+            _ => (),
         }
     }
 

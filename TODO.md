@@ -1,12 +1,10 @@
 # TODO
 
 ### chores
-2. Add significant cursive TUI test
-3. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
-4. Move to `directories 3.0`; optionally migrate existing macos configs? Not
+1. Add significant cursive TUI test
+2. Move to `directories 3.0`; optionally migrate existing macos configs? Not
    many people using this anyway...
-6. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
-
+3. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 
 ### bugs
 [ ] Support lack of persistent configuration:
