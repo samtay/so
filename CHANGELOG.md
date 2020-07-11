@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [v0.4.1](https://github.com/samtay/so/compare/v0.4.0...v0.4.1) (2020-07-10)
+
+#### Added
+- GitHub Action to bump homebrew-core formula
 #### Changed
 - Homebrew installation method: core
   [formula](https://formulae.brew.sh/formula/so) now available
