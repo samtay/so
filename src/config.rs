@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use crate::error::{Error, Result};
 use crate::utils;
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum SearchEngine {
     DuckDuckGo,
@@ -16,7 +16,7 @@ pub enum SearchEngine {
     StackExchange,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[serde(default)]
 pub struct Config {
     pub api_key: Option<String>,

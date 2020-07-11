@@ -1,17 +1,18 @@
 # TODO
 
 ### chores
-1. Add test for clap app
 2. Add significant cursive TUI test
 3. Refactor layout handling (see TODO on `tui::views::LayoutView::relayout`)
 4. Move to `directories 3.0`; optionally migrate existing macos configs? Not
    many people using this anyway...
-5. Add github action to bump homebrew formula on tag push
 6. Move to github actions ASAP, travis & appveyor are a PITA. See resources below.
 
 
 ### bugs
-1. Shift+TAB should move focus backwards
+[ ] Support lack of persistent configuration:
+   1) If we can't write it, still continue with application defaults, and
+   2) allow passing --config-path=PATH;
+[ ] Shift+TAB should move focus backwards
 
 ### feature ideas
 - Add sort option, e.g. relevance|votes|date
@@ -33,7 +34,6 @@ benefit of incorporating termimad features into a cursive view will not be felt.
 But, this is changing [soon](https://meta.stackexchange.com/q/348746).
 
 ### resources for later
-- [GA - bump homebrew](https://github.com/mislav/bump-homebrew-formula-action)
 - [Github Actions example](https://github.com/extrawurst/gitui)
 - [another GA example](https://github.com/casey/just)
 - [logging example](https://deterministic.space/rust-cli-tips.html)
