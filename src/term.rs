@@ -48,7 +48,7 @@ impl Term {
     /// Print text to stdout
     pub fn print(&self, text: &str) {
         println!("Terminal size: {:?}", crossterm::terminal::size());
-        println!("Calling skin.print_text with: BEGIN\n{}\nEND", text);
+        println!("Calling skin.print_text with: BEGIN\n{:?}\nEND", text);
         self.skin.print_text(text)
     }
 
