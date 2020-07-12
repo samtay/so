@@ -7,7 +7,7 @@ use std::io::{stderr, Write};
 use termimad::{CompoundStyle, MadSkin};
 use tokio::sync::{
     oneshot,
-    oneshot::{error::TryRecvError, Sender, Receiver},
+    oneshot::{error::TryRecvError, Receiver, Sender},
 };
 use tokio::task::JoinHandle;
 use tokio::time;
@@ -34,7 +34,7 @@ impl Default for Term {
 
 struct Spinner {
     tx: Sender<()>,
-    handle: JoinHandle<Result<()>>
+    handle: JoinHandle<Result<()>>,
 }
 
 impl Term {
@@ -123,7 +123,7 @@ impl Spinner {
     pub fn new() -> Self {
         let (tx, rx) = oneshot::channel();
         let handle = tokio::spawn(Self::spin(rx));
-        Spinner {tx, handle}
+        Spinner { tx, handle }
     }
 
     /// Stop the spinner. This requires a bit of cleanup, and so should be `await`ed before doing
@@ -136,32 +136,32 @@ impl Spinner {
 
     /// Spin until receiver finds unit
     async fn spin(mut rx: Receiver<()>) -> Result<()> {
-            let mut dots = LOADING_SPINNER_DOTS.iter().cycle();
-            terminal::enable_raw_mode()?;
+        let mut dots = LOADING_SPINNER_DOTS.iter().cycle();
+        terminal::enable_raw_mode()?;
+        execute!(
+            stderr(),
+            cursor::SavePosition,
+            cursor::Hide,
+            terminal::Clear(ClearType::CurrentLine),
+        )?;
+        let mut interval = time::interval(time::Duration::from_millis(LOADING_SPINNER_DELAY));
+        while let Err(TryRecvError::Empty) = rx.try_recv() {
             execute!(
                 stderr(),
-                cursor::SavePosition,
-                cursor::Hide,
+                cursor::MoveToColumn(0),
                 terminal::Clear(ClearType::CurrentLine),
+                Print(dots.next().unwrap())
             )?;
-            let mut interval = time::interval(time::Duration::from_millis(LOADING_SPINNER_DELAY));
-            while let Err(TryRecvError::Empty) = rx.try_recv() {
-                execute!(
-                    stderr(),
-                    cursor::MoveToColumn(0),
-                    terminal::Clear(ClearType::CurrentLine),
-                    Print(dots.next().unwrap())
-                )?;
-                interval.tick().await;
-            }
-            execute!(
-                stderr(),
-                terminal::Clear(ClearType::CurrentLine),
-                cursor::RestorePosition,
-                cursor::Show,
-            )?;
-            terminal::disable_raw_mode()?;
-            Ok(())
+            interval.tick().await;
+        }
+        execute!(
+            stderr(),
+            terminal::Clear(ClearType::CurrentLine),
+            cursor::RestorePosition,
+            cursor::Show,
+        )?;
+        terminal::disable_raw_mode()?;
+        Ok(())
     }
 }
 
