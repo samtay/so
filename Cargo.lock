@@ -17,9 +17,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ce6598c0a42bbb2485089f93d8dc28b31ff906ddb643c01a49fe3373d335e8e"
+checksum = "b5b1d27b53c9b0be4ee14c0777359f77f39e7d6d127b07a9f60fdd43850f8ec3"
 dependencies = [
  "const-random",
 ]
@@ -470,7 +470,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85fc5b6a8ba2f1bc743892068bde466438f78d6247197e2dc094bfd53fdea4b7"
 dependencies = [
- "ahash 0.4.1",
+ "ahash 0.4.3",
  "chrono",
  "crossbeam-channel",
  "enum-map",
@@ -1131,9 +1131,9 @@ dependencies = [
 
 [[package]]
 name = "minimad"
-version = "0.6.4"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a208cf4e8311b21538dd3fd63218ffcb102bf1ef1ce6fabbfb44e2237763ce5"
+checksum = "5a28c96fe347542be63d1f7e25d943526f68956c86421ad9fbf3ce3d0acb149c"
 dependencies = [
  "lazy_static",
 ]
@@ -1560,9 +1560,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05da548ad6865900e60eaba7f589cc0783590a92e940c26953ff81ddbab2d677"
+checksum = "d36492546b6af1463394d46f0c834346f31548646f6ba10849802c9c9a27ac33"
 
 [[package]]
 name = "plotters"
@@ -2048,7 +2048,7 @@ checksum = "3757cb9d89161a2f24e1cf78efa0c1fcff485d18e3f55e0aa3480824ddaa0f3f"
 
 [[package]]
 name = "so"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "clap",
  "criterion",
@@ -2085,9 +2085,9 @@ dependencies = [
 
 [[package]]
 name = "stable_deref_trait"
-version = "1.1.1"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
+checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "string_cache"
@@ -2128,9 +2128,9 @@ checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
 
 [[package]]
 name = "syn"
-version = "1.0.33"
+version = "1.0.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8d5d96e8cbb005d6959f119f773bfaebb5684296108fb32600c00cde305b2cd"
+checksum = "936cae2873c940d92e697597c5eee105fb570cd5689c695806f672883653349b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2174,9 +2174,9 @@ dependencies = [
 
 [[package]]
 name = "termimad"
-version = "0.8.24"
+version = "0.8.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c6e38d5fad7e4fd43909c4f8bee316de259fc756dd8c470c5afa4fa9069a7bb"
+checksum = "81560f6e790fb234116362f14525e4aedf6b614e15464aeb99f772956ef9ae86"
 dependencies = [
  "crossbeam",
  "crossterm",
