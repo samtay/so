@@ -19,7 +19,6 @@ pub const NAME_QUESTION_VIEW: &str = "question_view";
 pub const NAME_ANSWER_VIEW: &str = "answer_view";
 pub const NAME_FULL_LAYOUT: &str = "full_layout";
 
-// TODO this seems pointless; probably should be removed
 pub enum Name {
     QuestionList,
     AnswerList,

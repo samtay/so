@@ -2052,6 +2052,7 @@ version = "0.4.2"
 dependencies = [
  "clap",
  "criterion",
+ "crossbeam-channel",
  "crossterm",
  "cursive",
  "directories",

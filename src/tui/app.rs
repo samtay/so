@@ -23,8 +23,13 @@ pub const NAME_HELP_VIEW: &str = "help_view";
 
 pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     let mut siv = cursive::default();
-    siv.load_theme_file(Config::theme_file_path()?).unwrap(); // TODO dont unwrap
+    siv.load_theme_file(Config::theme_file_path()?).unwrap();
+    mk_tui(&mut siv, qs);
+    siv.run();
+    Ok(())
+}
 
+fn mk_tui(mut siv: &mut Cursive, qs: Vec<Question<Markdown>>) {
     let question_map: HashMap<u32, Question<Markdown>> =
         qs.clone().into_iter().map(|q| (q.id, q)).collect();
     let question_map = Arc::new(question_map);
@@ -71,7 +76,7 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
         if let Some(pos) = s.screen_mut().find_layer_from_name(NAME_HELP_VIEW) {
             s.screen_mut().remove_layer(pos);
         } else {
-            s.add_layer(help());
+            s.add_layer(help().add_vim_bindings());
         }
     });
     // Reload theme
@@ -79,8 +84,6 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
         s.load_theme_file(Config::theme_file_path().unwrap())
             .unwrap()
     });
-    siv.run();
-    Ok(())
 }
 
 fn question_selected_callback(
@@ -169,5 +172,103 @@ pub fn help() -> Dialog {
     .title("Help")
 }
 
-// TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!
-// maybe see if we can conditionally run when --nocapture is passed?
+#[cfg(test)]
+pub mod tests {
+
+    use cursive::backends::puppet::observed::ObservedScreen;
+    use cursive::event::Event;
+    use cursive::*;
+    use std::cell::RefCell;
+
+    use super::*;
+
+    pub struct BasicTest {
+        siv: Cursive,
+        screen_stream: crossbeam_channel::Receiver<ObservedScreen>,
+        input: crossbeam_channel::Sender<Option<Event>>,
+        last_screen: RefCell<Option<ObservedScreen>>,
+    }
+    impl BasicTest {
+        pub fn new() -> Self {
+            let size = Vec2::new(80, 20);
+            let backend = backends::puppet::Backend::init(Some(size));
+            let sink = backend.stream();
+            let input = backend.input();
+            let mut siv = Cursive::new(|| backend);
+
+            // TODO stub out some q/a
+            mk_tui(
+                &mut siv,
+                vec![Question {
+                    id: 1,
+                    score: 64,
+                    answers: vec![],
+                    title: String::from("Is a hamburger a sanwich?"),
+                    body: markdown::parse("For **real** though"),
+                }],
+            );
+
+            input.send(Some(Event::Refresh)).unwrap();
+            siv.step();
+
+            BasicTest {
+                siv,
+                screen_stream: sink,
+                input,
+                last_screen: RefCell::new(None),
+            }
+        }
+
+        pub fn last_screen(&self) -> Option<ObservedScreen> {
+            while let Ok(screen) = self.screen_stream.try_recv() {
+                self.last_screen.replace(Some(screen));
+            }
+
+            self.last_screen.borrow().clone()
+        }
+
+        /// Run `cargo test -- --nocapture` to see debug screens
+        pub fn dump_debug(&self) {
+            self.last_screen().as_ref().map(|s| s.print_stdout());
+        }
+
+        pub fn hit_keystroke(&mut self, key: Event) {
+            self.input.send(Some(key)).unwrap();
+            self.siv.step();
+        }
+    }
+
+    #[test]
+    fn test_basic() {
+        let s = BasicTest::new();
+        s.dump_debug();
+
+        // Can see question
+        let screen = s.last_screen().unwrap();
+        assert_eq!(screen.find_occurences("Is a hamburger a sanwich").len(), 1);
+        assert_eq!(screen.find_occurences("For real though").len(), 1);
+    }
+
+    #[test]
+    fn test_help() {
+        let mut s = BasicTest::new();
+
+        // Get help
+        s.hit_keystroke(Event::Char('?'));
+        s.dump_debug();
+        let screen = s.last_screen().unwrap();
+        assert_eq!(screen.find_occurences("Panes").len(), 1);
+
+        // Scroll to bottom
+        s.hit_keystroke(Event::Char('G'));
+        s.dump_debug();
+        let screen = s.last_screen().unwrap();
+        assert_eq!(screen.find_occurences("Toggle this help menu").len(), 1);
+
+        // Close help
+        s.hit_keystroke(Event::Char('?'));
+        s.dump_debug();
+        let screen = s.last_screen().unwrap();
+        assert_eq!(screen.find_occurences("Toggle this help menu").len(), 0);
+    }
+}

@@ -17,6 +17,7 @@ travis-ci = { repository = "samtay/so", branch = "master" }
 
 [dev-dependencies]
 criterion = "0.3"
+crossbeam-channel = "0.4.2"
 
 [[bench]]
 name = "html_parsing"
