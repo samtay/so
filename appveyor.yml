@@ -38,7 +38,7 @@ test_script:
     )
 
 before_deploy:
-  - cargo rustc --no-default-features --features windows --features reqwest/native-tls-vendored --target %TARGET% --release --bin %CRATE_NAME% -- -C lto
+  - cargo rustc --no-default-features --features windows --features reqwest/native-tls-vendored --target %TARGET% --release --bin %CRATE_NAME%
   - ps: ci\before_deploy.ps1
 
 deploy:
