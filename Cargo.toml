@@ -8,7 +8,7 @@ homepage = "https://github.com/samtay/so"
 repository = "https://github.com/samtay/so"
 keywords = ["cli", "tui", "stackoverflow", "stackexchange"]
 categories = ["command-line-utilities"]
-authors = ["Sam Tay <sam.chong.tay@gmail.com>"]
+authors = ["Sam Tay <sam.chong.tay@pm.me>"]
 edition = "2018"
 
 [badges]

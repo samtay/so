@@ -65,7 +65,7 @@ branches:
 notifications:
   - provider: Email
     to:
-      - sam.chong.tay@gmail.com
+      - sam.chong.tay@pm.me
     on_build_success: false
 
 # Building is done in the test phase, so we disable Appveyor's build phase.
