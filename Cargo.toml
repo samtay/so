@@ -49,6 +49,9 @@ termimad = "0.8"
 crossterm = { version = "0.17", features = ["event-stream"] }
 pulldown-cmark = { version = "0.7", default-features = false }
 
+# temporary to fix https://github.com/Lymia/enumset/issues/17
+syn = "=1.0.57"
+
 [dependencies.cursive]
 version =  "0.15"
 default-features = false
