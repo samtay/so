@@ -17,8 +17,8 @@ use tui::markdown::Markdown;
 
 fn main() -> Result<()> {
     // Tokio runtime
-    let mut rt = Runtime::new()?;
-    rt.block_on(run())
+    Runtime::new()?
+        .block_on(run())
         .and_then(|qs| {
             // Run TUI
             qs.map(tui::run);

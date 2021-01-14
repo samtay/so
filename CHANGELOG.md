@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [v0.4.3](https://github.com/samtay/so/compare/v0.4.1...v0.4.3)
+
+#### Fixed
+- Build issue caused by syn dependency ([#13](https://github.com/samtay/so/issues/13))
+- Panic from termimad ([#8](https://github.com/samtay/so/issues/8))
+
 #### Added
 - Windows installation option
   [lukesampson/scoop-extras#4376](https://github.com/lukesampson/scoop-extras/pull/4376).

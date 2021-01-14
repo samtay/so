@@ -88,13 +88,13 @@ impl<T: View> ViewWrapper for ListViewT<T> {
 
     // Always take arrow keys, its jarring to have them move pane focus
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
-        let should_consume = match event {
+        let should_consume = matches!(
+            event,
             Event::Key(Key::Right)
-            | Event::Key(Key::Left)
-            | Event::Key(Key::Down)
-            | Event::Key(Key::Up) => true,
-            _ => false,
-        };
+                | Event::Key(Key::Left)
+                | Event::Key(Key::Down)
+                | Event::Key(Key::Up)
+        );
 
         match self.view.on_event(event) {
             EventResult::Ignored if should_consume => EventResult::Consumed(None),
@@ -210,13 +210,13 @@ impl<T: View> ViewWrapper for MdViewT<T> {
 
     // Always take arrow keys, its jarring to have them move pane focus
     fn wrap_on_event(&mut self, event: Event) -> EventResult {
-        let should_consume = match event {
+        let should_consume = matches!(
+            event,
             Event::Key(Key::Right)
-            | Event::Key(Key::Left)
-            | Event::Key(Key::Down)
-            | Event::Key(Key::Up) => true,
-            _ => false,
-        };
+                | Event::Key(Key::Left)
+                | Event::Key(Key::Down)
+                | Event::Key(Key::Up)
+        );
 
         match self.view.on_event(event) {
             EventResult::Ignored if should_consume => EventResult::Consumed(None),

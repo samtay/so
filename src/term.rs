@@ -4,7 +4,7 @@ use crossterm::terminal::ClearType;
 use crossterm::{cursor, execute, terminal};
 use futures::Future;
 use std::io::{stderr, Write};
-use termimad::{CompoundStyle, MadSkin};
+use termimad::{CompoundStyle, LineStyle, MadSkin};
 use tokio::sync::{
     oneshot,
     oneshot::{error::TryRecvError, Receiver, Sender},
@@ -39,9 +39,14 @@ struct Spinner {
 
 impl Term {
     pub fn new() -> Self {
-        let mut skin = MadSkin::default();
-        skin.inline_code = CompoundStyle::with_fg(Color::Cyan);
-        skin.code_block.compound_style = CompoundStyle::with_fg(Color::Cyan);
+        let skin = MadSkin {
+            inline_code: CompoundStyle::with_fg(Color::Cyan),
+            code_block: LineStyle {
+                compound_style: CompoundStyle::with_fg(Color::Cyan),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
         Term { skin }
     }
 

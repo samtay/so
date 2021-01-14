@@ -92,7 +92,7 @@ impl Config {
 
     /// Get project directory
     pub fn project_dir() -> Result<ProjectDirs> {
-        ProjectDirs::from("io", "Sam Tay", "so").ok_or_else(|| Error::ProjectDir)
+        ProjectDirs::from("io", "Sam Tay", "so").ok_or(Error::ProjectDir)
     }
 
     // TODO consider switching to .toml to be consistent with colors.toml
