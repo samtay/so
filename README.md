@@ -49,6 +49,13 @@ or
 ```
 yay -S so-git
 ```
+
+#### NetBSD
+You can install the package [so](https://pkgsrc.se/www/so) via
+```
+pkgin install so
+```
+
 #### MacOS
 You can install the homebrew [formula](https://formulae.brew.sh/formula/so)
 ```

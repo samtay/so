@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### Added
+- NetBSD installation option.  Thanks **voidpin**.
+
 ### [v0.4.3](https://github.com/samtay/so/compare/v0.4.1...v0.4.3)
 
 #### Fixed
