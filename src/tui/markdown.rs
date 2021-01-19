@@ -65,7 +65,7 @@ pub fn preview(width: usize, input: &StyledString) -> StyledString {
 fn drop_color(span: StyledIndexedSpan) -> StyledIndexedSpan {
     IndexedSpan {
         attr: Style {
-            color: None,
+            color: Default::default(),
             ..span.attr
         },
         ..span
