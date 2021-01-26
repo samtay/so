@@ -10,6 +10,7 @@ keywords = ["cli", "tui", "stackoverflow", "stackexchange"]
 categories = ["command-line-utilities"]
 authors = ["Sam Tay <sam.chong.tay@pm.me>"]
 edition = "2018"
+include = ["src/**/*", "themes/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [badges]
 appveyor = { repository = "samtay/so", branch = "master", service = "github" }
@@ -20,10 +21,12 @@ criterion = "0.3"
 
 [[bench]]
 name = "html_parsing"
+path = "html_parsing.rs"
 harness = false
 
 [[bench]]
 name = "md_parsing"
+path = "md_parsing.rs"
 harness = false
 
 [dependencies]
