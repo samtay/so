@@ -19,10 +19,9 @@ fn main() -> Result<()> {
     // Tokio runtime
     Runtime::new()?
         .block_on(run())
-        .and_then(|qs| {
+        .map(|qs| {
             // Run TUI
             qs.map(tui::run);
-            Ok(())
         })
         .or_else(|e: Error| {
             // Handle errors
