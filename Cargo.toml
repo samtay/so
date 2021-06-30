@@ -1,6 +1,6 @@
 [package]
 name = "so"
-version = "0.4.4"
+version = "0.4.5"
 license = "MIT"
 description = "A terminal interface for StackOverflow"
 readme = "README.md"
@@ -21,12 +21,10 @@ criterion = "0.3"
 
 [[bench]]
 name = "html_parsing"
-path = "benches/html_parsing.rs"
 harness = false
 
 [[bench]]
 name = "md_parsing"
-path = "benches/md_parsing.rs"
 harness = false
 
 [dependencies]

@@ -6,8 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [v0.4.5](https://github.com/samtay/so/compare/v0.4.3...v0.4.5)
+
 #### Added
 - NetBSD installation option.  Thanks **voidpin**.
+
+#### Fixed
+- Google parser went out of date
+- Panic from termimad ([#5](https://github.com/samtay/so/issues/5))
 
 ### [v0.4.3](https://github.com/samtay/so/compare/v0.4.1...v0.4.3)
 
