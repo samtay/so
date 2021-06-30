@@ -3,7 +3,7 @@ use crossterm::style::{Color, Print};
 use crossterm::terminal::ClearType;
 use crossterm::{cursor, execute, terminal};
 use futures::Future;
-use std::io::{stderr, Write};
+use std::io::stderr;
 use termimad::{CompoundStyle, LineStyle, MadSkin};
 use tokio::sync::{
     oneshot,

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::config::Config;
 use crate::error::{Error, Result};
@@ -14,21 +14,21 @@ pub struct LocalStorage {
 }
 
 impl LocalStorage {
-    fn fetch_local_sites(filename: &PathBuf) -> Result<Option<Vec<Site>>> {
+    fn fetch_local_sites(filename: &Path) -> Result<Option<Vec<Site>>> {
         if let Some(file) = utils::open_file(filename)? {
             return serde_json::from_reader(file)
-                .map_err(|_| Error::MalformedFile(filename.clone()));
+                .map_err(|_| Error::MalformedFile(filename.to_path_buf()));
         }
         Ok(None)
     }
 
-    fn store_local_sites(filename: &PathBuf, sites: &[Site]) -> Result<()> {
+    fn store_local_sites(filename: &Path, sites: &[Site]) -> Result<()> {
         let file = utils::create_file(filename)?;
         serde_json::to_writer(file, sites)?;
         Ok(())
     }
 
-    async fn init_sites(filename: &PathBuf, update: bool) -> Result<Vec<Site>> {
+    async fn init_sites(filename: &Path, update: bool) -> Result<Vec<Site>> {
         if !update {
             if let Some(sites) = Self::fetch_local_sites(filename)? {
                 return Ok(sites);

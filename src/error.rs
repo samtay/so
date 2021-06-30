@@ -14,8 +14,6 @@ pub enum Error {
     SerdeJson(#[from] serde_json::Error),
     #[error("SerdeYaml error: {0}")]
     SerdeYaml(#[from] serde_yaml::Error),
-    #[error("IO error: {0}")]
-    IO(#[from] std::io::Error),
     #[error("Futures Join error : {0}")]
     JoinError(#[from] tokio::task::JoinError),
     #[error("File `{}` is malformed; try removing it", .0.display())]
