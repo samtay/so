@@ -21,10 +21,12 @@ criterion = "0.3"
 
 [[bench]]
 name = "html_parsing"
+path = "benches/html_parsing.rs"
 harness = false
 
 [[bench]]
 name = "md_parsing"
+path = "benches/md_parsing.rs"
 harness = false
 
 [dependencies]
