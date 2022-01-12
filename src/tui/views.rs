@@ -1,7 +1,7 @@
 use cursive::event::{Callback, Event, EventResult, Key};
 use cursive::traits::{Finder, Nameable, Resizable, Scrollable};
 use cursive::utils::markup::StyledString;
-use cursive::view::{Margins, SizeConstraint, View, ViewWrapper};
+use cursive::view::{CannotFocus, Margins, SizeConstraint, View, ViewWrapper};
 use cursive::views::{
     HideableView, LinearLayout, NamedView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
     TextView,
@@ -82,8 +82,15 @@ impl<T: View> ViewWrapper for ListViewT<T> {
     cursive::wrap_impl!(self.view: T);
 
     // In full screen mode we always take focus, even though currently hidden
-    fn wrap_take_focus(&mut self, source: cursive::direction::Direction) -> bool {
-        self.force_take_focus || self.view.take_focus(source)
+    fn wrap_take_focus(
+        &mut self,
+        source: cursive::direction::Direction,
+    ) -> Result<EventResult, CannotFocus> {
+        self.view.take_focus(source).or_else(|_| {
+            self.force_take_focus
+                .then(EventResult::consumed)
+                .ok_or(CannotFocus)
+        })
     }
 
     // Always take arrow keys, its jarring to have them move pane focus
@@ -204,8 +211,15 @@ pub struct MdViewT<T: View> {
 impl<T: View> ViewWrapper for MdViewT<T> {
     cursive::wrap_impl!(self.view: T);
 
-    fn wrap_take_focus(&mut self, source: cursive::direction::Direction) -> bool {
-        self.force_take_focus || self.view.take_focus(source)
+    fn wrap_take_focus(
+        &mut self,
+        source: cursive::direction::Direction,
+    ) -> Result<EventResult, CannotFocus> {
+        self.view.take_focus(source).or_else(|_| {
+            self.force_take_focus
+                .then(EventResult::consumed)
+                .ok_or(CannotFocus)
+        })
     }
 
     // Always take arrow keys, its jarring to have them move pane focus
