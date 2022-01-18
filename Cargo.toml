@@ -56,7 +56,7 @@ pulldown-cmark = { version = "0.8", default-features = false }
 syn = "=1.0.57"
 
 [dependencies.cursive]
-version =  "0.16"
+version =  "0.17"
 default-features = false
 features = ["toml"]
 
