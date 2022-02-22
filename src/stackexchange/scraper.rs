@@ -51,7 +51,7 @@ impl Scraper for DuckDuckGo {
         parse_with_selector(anchors, html, sites, limit).and_then(|sd| {
             // DDG seems to never have empty results, so assume this is blocked
             if sd.question_ids.is_empty() {
-                Err(Error::ScrapingError(String::from(
+                Err(Error::Scraping(String::from(
                     "DuckDuckGo blocked this request",
                 )))
             } else {
@@ -325,9 +325,7 @@ mod tests {
         );
 
         match DuckDuckGo.parse(html, &sites, 2) {
-            Err(Error::ScrapingError(s)) if s == "DuckDuckGo blocked this request".to_string() => {
-                Ok(())
-            }
+            Err(Error::Scraping(s)) if s == "DuckDuckGo blocked this request".to_string() => Ok(()),
             _ => Err(String::from("Failed to detect DuckDuckGo blocker")),
         }
     }

@@ -15,7 +15,7 @@ pub enum Error {
     #[error("SerdeYaml error: {0}")]
     SerdeYaml(#[from] serde_yaml::Error),
     #[error("Futures Join error : {0}")]
-    JoinError(#[from] tokio::task::JoinError),
+    Join(#[from] tokio::task::JoinError),
     #[error("File `{}` is malformed; try removing it", .0.display())]
     MalformedFile(PathBuf),
     #[error("Lacking {0:?} permissions on `{}`", .1.display())]
@@ -23,7 +23,7 @@ pub enum Error {
     #[error("{0}")]
     StackExchange(String),
     #[error("{0}")]
-    ScrapingError(String),
+    Scraping(String),
     #[error("Couldn't find a suitable project directory; is your OS supported?")]
     ProjectDir,
     #[error("Sorry, couldn't find any answers to your question")]

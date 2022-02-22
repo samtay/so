@@ -153,7 +153,7 @@ impl Api {
         params.insert("filter", SE_FILTER);
         params.insert("page", "1");
         if let Some(key) = &self.api_key {
-            params.insert("key", &key);
+            params.insert("key", key);
         }
         params
     }

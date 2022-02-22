@@ -85,7 +85,7 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
 
 fn question_selected_callback(
     question_map: Arc<HashMap<u32, Question<Markdown>>>,
-    mut s: &mut Cursive,
+    s: &mut Cursive,
     qid: u32,
 ) {
     let q = question_map.get(&qid).unwrap();
@@ -102,7 +102,7 @@ fn question_selected_callback(
             v.reset_with_all(q.answers.iter().map(|a| (preview_answer(x, a), a.id)))
         })
         .expect("Panic: setting answer list content failed");
-    cb(&mut s)
+    cb(s)
 }
 
 fn preview_question(q: &Question<Markdown>) -> StyledString {
