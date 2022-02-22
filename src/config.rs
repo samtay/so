@@ -39,7 +39,7 @@ impl fmt::Display for SearchEngine {
 
 impl Default for SearchEngine {
     fn default() -> Self {
-        SearchEngine::DuckDuckGo
+        SearchEngine::Google
     }
 }
 
