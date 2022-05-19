@@ -1,7 +1,7 @@
 <h1 align="center">
 <img width="300px" src="assets/logo.png" />
 
-[![travis][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] [![MIT][s3]][l3]
+[![travis][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] [![MIT][s3]][l3] [![Packaging status](https://repology.org/badge/tiny-repos/so.svg)](https://repology.org/project/so/versions)
 
 </h1>
 
@@ -50,6 +50,12 @@ or
 yay -S so-git
 ```
 
+#### FreeBSD
+You can install the package [so](https://cgit.freebsd.org/ports/tree/www/so) via
+```
+pkg install so
+
+```
 #### NetBSD
 You can install the package [so](https://pkgsrc.se/www/so) via
 ```
