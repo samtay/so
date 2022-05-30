@@ -154,9 +154,12 @@ fine for most users.
 The available search engines are StackExchange, DuckDuckGo, and Google.
 StackExchange will always be the fastest to search because it doesn't require an
 additional request or any HTML parsing; however, it is also very primitive.
-DuckDuckGo is in second place for speed, as its response HTML is much smaller
+~~DuckDuckGo is in second place for speed, as its response HTML is much smaller
 than Google's. I've found that it performs well for my queries, so it is the
-default search engine.
+default search engine.~~
+
+DuckDuckGo [sometimes blocks requests](https://github.com/samtay/so/issues/16), so
+it is no longer the default.
 
 ### multi-site searching
 As stated in the [docs](https://api.stackexchange.com/docs/throttle),
