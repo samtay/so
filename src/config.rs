@@ -10,7 +10,7 @@ use std::process::Stdio;
 use crate::error::{Error, Result};
 use crate::utils;
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum SearchEngine {
     DuckDuckGo,
@@ -18,7 +18,7 @@ pub enum SearchEngine {
     StackExchange,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(default)]
 pub struct Config {
     pub api_key: Option<String>,

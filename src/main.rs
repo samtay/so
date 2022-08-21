@@ -6,6 +6,8 @@ mod term;
 mod tui;
 mod utils;
 
+use std::fmt::Write;
+
 use tokio::runtime::Runtime;
 use tokio::task;
 
@@ -57,7 +59,7 @@ async fn run() -> Result<Option<(Vec<Question<Markdown>>, Config)>> {
         md.push_str("|Site Code|Site URL|\n");
         md.push_str("|-:|:-|\n");
         for s in ls.sites.iter() {
-            md.push_str(&format!("|{}|{}\n", s.api_site_parameter, s.site_url));
+            writeln!(&mut md, "|{}|{}", s.api_site_parameter, s.site_url).ok();
         }
         md.push_str("|-\n");
         term.print(&md);

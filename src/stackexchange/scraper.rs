@@ -17,7 +17,7 @@ const GOOGLE_URL: &str = "https://google.com/search";
 // If this is ever an issue, it wouldn't be too hard to account for this; just
 // keep track of site in the `ordering` field and also return site from the
 // spawned per-site tasks.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ScrapedData {
     /// Mapping of site code to question ids
     pub question_ids: HashMap<String, Vec<String>>,
@@ -182,7 +182,7 @@ fn question_url_to_id(site_url: &str, input: &str) -> Option<String> {
         } else {
             input[0..].to_string()
         };
-        if id.chars().all(|c| c.is_digit(10)) {
+        if id.chars().all(|c| c.is_ascii_digit()) {
             Some(id)
         } else {
             None
