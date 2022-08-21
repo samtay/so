@@ -43,5 +43,6 @@ jobs:
         with:
           bin: so
           target: ${{ matrix.target }}
+          features: reqwest/native-tls-vendored
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
