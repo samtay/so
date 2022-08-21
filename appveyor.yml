@@ -59,7 +59,7 @@ branches:
   only:
     # Release tags
     - /^v\d+\.\d+\.\d+.*$/
-    - master
+    - main
     - develop
 
 notifications:
