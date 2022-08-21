@@ -1,12 +1,11 @@
 <h1 align="center">
 <img width="300px" src="assets/logo.png" />
 
-[![travis][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] [![MIT][s3]][l3] [![Packaging status](https://repology.org/badge/tiny-repos/so.svg)](https://repology.org/project/so/versions)
+[![CI][s0]][l0] [![appveyor][s1]][l1] [![crates][s2]][l2] [![MIT][s3]][l3] [![Packaging status](https://repology.org/badge/tiny-repos/so.svg)](https://repology.org/project/so/versions)
 
 </h1>
-
-[s0]: https://travis-ci.org/samtay/so.svg?branch=master
-[l0]: https://travis-ci.org/samtay/so
+[s0]: https://github.com/samtay/so/actions/workflows/ci.yml/badge.svg
+[l0]: https://github.com/samtay/so/actions/workflows/ci.yml
 [s1]: https://ci.appveyor.com/api/projects/status/pu7e63f2sqq6x1iq/branch/master?svg=true
 [l1]: https://ci.appveyor.com/project/samtay/so/branch/master
 [s2]: https://img.shields.io/crates/v/so.svg
