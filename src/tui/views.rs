@@ -262,7 +262,15 @@ impl MdView {
             .call_on_name(&self.inner_name, |tv: &mut TextView| {
                 tv.set_content(content.clone())
             })
-            .expect("unwrap failed in MdView.set_content")
+            .expect("couldn't find mdview")
+    }
+
+    pub fn get_content(&mut self) -> Markdown {
+        self.view
+            .call_on_name(&self.inner_name, |tv: &mut TextView| {
+                tv.get_content().clone()
+            })
+            .expect("couldn't find mdview")
     }
 
     pub fn show_title(&mut self) {
@@ -372,6 +380,22 @@ impl LayoutView {
         .with_name(NAME_FULL_LAYOUT)
     }
 
+    // Get the name of the currently focused pane
+    pub fn get_focused_name(&self) -> &'static str {
+        Self::xy_to_name(self.get_focused_index())
+    }
+
+    // Get the question or answer markdown content, whichever side is focused
+    pub fn get_focused_content(&mut self) -> Markdown {
+        let name = match self.get_focused_name() {
+            NAME_QUESTION_VIEW | NAME_QUESTION_LIST => NAME_QUESTION_VIEW,
+            _ => NAME_ANSWER_VIEW,
+        };
+        self.view
+            .call_on_name(name, |v: &mut MdView| v.get_content())
+            .expect("call on md view failed")
+    }
+
     fn get_constraints(&self, screen_size: Vec2) -> LayoutViewSizing {
         let heuristic = 1;
         let width = SizeConstraint::Fixed(screen_size.x / 2 - heuristic);
@@ -438,7 +462,7 @@ impl LayoutView {
     }
 
     fn refocus(&mut self) {
-        let name = Self::xy_to_name(self.get_focused_index());
+        let name = self.get_focused_name();
         match self.layout {
             Layout::SingleColumn if name == NAME_QUESTION_LIST || name == NAME_QUESTION_VIEW => {
                 self.view
@@ -618,3 +642,24 @@ pub trait Vimable: View + Sized {
 }
 
 impl<T: View> Vimable for T {}
+
+pub struct TempView<T: View> {
+    view: T,
+}
+
+// TODO figure out how to auto close this in 3-5s
+impl<T: View> ViewWrapper for TempView<T> {
+    cursive::wrap_impl!(self.view: T);
+
+    fn wrap_on_event(&mut self, _event: Event) -> EventResult {
+        EventResult::with_cb(|s| {
+            s.pop_layer();
+        })
+    }
+}
+
+impl<T: View> TempView<T> {
+    pub fn new(view: T) -> Self {
+        Self { view }
+    }
+}

@@ -21,7 +21,7 @@ fn main() -> Result<()> {
         .block_on(run())
         .map(|qs| {
             // Run TUI
-            qs.map(tui::run);
+            qs.map(|(qs, cfg)| tui::run(qs, cfg));
         })
         .or_else(|e: Error| {
             // Handle errors
@@ -31,7 +31,7 @@ fn main() -> Result<()> {
 
 /// Runs the CLI and, if the user wishes to enter the TUI, returns
 /// question/answer data
-async fn run() -> Result<Option<Vec<Question<Markdown>>>> {
+async fn run() -> Result<Option<(Vec<Question<Markdown>>, Config)>> {
     // Get CLI opts
     let opts = cli::get_opts()?;
     let config = opts.config;
@@ -78,7 +78,7 @@ async fn run() -> Result<Option<Vec<Question<Markdown>>>> {
     }
 
     if let Some(q) = opts.query {
-        let mut search = Search::new(config, ls, q);
+        let mut search = Search::new(config.clone(), ls, q);
         if lucky {
             // Show top answer
             let md = Term::wrap_spinner(search.search_lucky()).await??;
@@ -92,9 +92,12 @@ async fn run() -> Result<Option<Vec<Question<Markdown>>>> {
             }
 
             // Get the rest of the questions
-            return Ok(Some(Term::wrap_spinner(qs).await?.unwrap()?));
+            return Ok(Some((Term::wrap_spinner(qs).await?.unwrap()?, config)));
         } else {
-            return Ok(Some(Term::wrap_spinner(search.search_md()).await??));
+            return Ok(Some((
+                Term::wrap_spinner(search.search_md()).await??,
+                config,
+            )));
         }
     }
     Ok(None)

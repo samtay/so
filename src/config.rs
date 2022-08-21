@@ -4,6 +4,8 @@ use std::fmt;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use std::process::Command;
+use std::process::Stdio;
 
 use crate::error::{Error, Result};
 use crate::utils;
@@ -24,6 +26,7 @@ pub struct Config {
     pub lucky: bool,
     pub sites: Vec<String>,
     pub search_engine: SearchEngine,
+    pub copy_cmd: Option<String>,
 }
 
 impl fmt::Display for SearchEngine {
@@ -52,6 +55,16 @@ impl Default for Config {
             lucky: true,
             sites: vec![String::from("stackoverflow")],
             search_engine: SearchEngine::default(),
+            copy_cmd: Some(String::from(if cfg!(target_os = "macos") {
+                "pbcopy"
+            } else if cfg!(target_os = "windows") {
+                "clip"
+            } else if cfg!(target_os = "linux") {
+                "xclip -sel clip"
+            } else {
+                // this default makes no sense but w/e
+                "wl-copy"
+            })),
         }
     }
 }
@@ -114,5 +127,13 @@ impl Config {
         let filename = Self::config_file_path()?;
         let file = utils::create_file(&filename)?;
         Ok(serde_yaml::to_writer(file, &self)?)
+    }
+
+    pub fn get_copy_cmd(&self) -> Option<Command> {
+        let copy_cmd_str = self.copy_cmd.as_ref()?;
+        let mut pieces = copy_cmd_str.split_whitespace();
+        let mut cmd = Command::new(pieces.next()?);
+        cmd.args(pieces).stdin(Stdio::piped());
+        Some(cmd)
     }
 }

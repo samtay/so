@@ -325,7 +325,7 @@ mod tests {
         );
 
         match DuckDuckGo.parse(html, &sites, 2) {
-            Err(Error::Scraping(s)) if s == "DuckDuckGo blocked this request".to_string() => Ok(()),
+            Err(Error::Scraping(s)) if s == *"DuckDuckGo blocked this request" => Ok(()),
             _ => Err(String::from("Failed to detect DuckDuckGo blocker")),
         }
     }

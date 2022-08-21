@@ -1,27 +1,33 @@
-use cursive::event::Event;
+use cursive::event::{Event, Key};
 use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::traits::{Nameable, Scrollable};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
-use cursive::views::{Dialog, TextView};
+use cursive::views::{Dialog, TextView, ViewRef};
 use cursive::Cursive;
 use cursive::XY;
 use std::collections::HashMap;
+use std::io;
+use std::io::Write;
 use std::sync::Arc;
 
 use super::markdown;
 use super::markdown::Markdown;
 use super::views::{
-    LayoutView, ListView, MdView, Name, Vimable, NAME_ANSWER_LIST, NAME_ANSWER_VIEW,
-    NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
+    LayoutView, ListView, MdView, Name, TempView, Vimable, NAME_ANSWER_LIST, NAME_ANSWER_VIEW,
+    NAME_FULL_LAYOUT, NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
 };
 use crate::config::Config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
 
 pub const NAME_HELP_VIEW: &str = "help_view";
+pub const NAME_TEMP_MSG: &str = "tmp_msg_view";
 
-pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
+// TODO an Arc<Mutex> app state that gets auto updated with new selections would
+// be convenient
+
+pub fn run(qs: Vec<Question<Markdown>>, cfg: Config) -> Result<()> {
     let mut siv = cursive::default();
     siv.load_theme_file(Config::theme_file_path()?).unwrap(); // TODO dont unwrap
 
@@ -31,8 +37,7 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
     let answer_map: HashMap<u32, Answer<Markdown>> = qs
         .clone()
         .into_iter()
-        .map(|q| q.answers.into_iter().map(|a| (a.id, a)))
-        .flatten()
+        .flat_map(|q| q.answers.into_iter().map(|a| (a.id, a)))
         .collect();
     let answer_map = Arc::new(answer_map);
 
@@ -74,11 +79,51 @@ pub fn run(qs: Vec<Question<Markdown>>) -> Result<()> {
             s.add_layer(help());
         }
     });
+
     // Reload theme
     siv.add_global_callback(Event::CtrlChar('r'), |s| {
         s.load_theme_file(Config::theme_file_path().unwrap())
             .unwrap()
     });
+
+    // Copy contents to sys clipboard
+    siv.add_global_callback('y', move |s| {
+        let mut v: ViewRef<LayoutView> = s
+            .find_name(NAME_FULL_LAYOUT)
+            .expect("bug: layout view should exist");
+        let md = v.get_focused_content();
+        if let Some(mut copy_cmd) = cfg.get_copy_cmd() {
+            let res = (|| {
+                let mut child = copy_cmd.spawn().map_err(|e| {
+                    if e.kind() == io::ErrorKind::NotFound {
+                        io::Error::new(
+                            io::ErrorKind::Other,
+                            "couldn't exec copy cmd; you may need to configure it manually",
+                        )
+                    } else {
+                        e
+                    }
+                })?;
+                let mut stdin = child.stdin.take().ok_or_else(|| {
+                    io::Error::new(io::ErrorKind::Other, "couldn't get stdin of copy cmd")
+                })?;
+                stdin.write_all(md.source().as_bytes())?;
+                Ok("copied to clipboard!".to_string())
+            })();
+            temp_feedback_msg(s, res);
+        }
+    });
+
+    siv.add_global_callback(Event::Key(Key::Esc), |s| {
+        if let Some(pos) = s.screen_mut().find_layer_from_name(NAME_HELP_VIEW) {
+            s.screen_mut().remove_layer(pos);
+        }
+        if let Some(pos) = s.screen_mut().find_layer_from_name(NAME_TEMP_MSG) {
+            s.screen_mut().remove_layer(pos);
+        }
+    });
+
+    // Run the app
     siv.run();
     Ok(())
 }
@@ -156,6 +201,7 @@ pub fn help() -> Dialog {
 **G**:       Scroll To Bottom
 
 ## Misc
+**y**:              Copy current q/a to the clipboard
 **q, ZZ, Ctrl<c>**: Exit
 **Ctrl<r>**:        Reload theme
 **?**:              Toggle this help menu
@@ -167,6 +213,20 @@ pub fn help() -> Dialog {
     )
     .dismiss_button("Close")
     .title("Help")
+}
+
+pub fn temp_feedback_msg(siv: &mut Cursive, msg: io::Result<String>) {
+    // TODO semaphore to close existing msg before displaying new one
+    let style = if msg.is_ok() {
+        Color::Light(BaseColor::Green)
+    } else {
+        Color::Light(BaseColor::Red)
+    };
+    let content = msg.unwrap_or_else(|e| format!("error: {}", e));
+    let styled_content = SpannedString::styled(content, style);
+    let layer = Dialog::around(TextView::new(styled_content));
+    let temp = TempView::new(layer).with_name(NAME_TEMP_MSG);
+    siv.add_layer(temp);
 }
 
 // TODO see cursive/examples/src/bin/select_test.rs for how to test the interface!

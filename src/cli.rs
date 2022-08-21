@@ -137,8 +137,7 @@ where
             sites: matches
                 .values_of("site")
                 .unwrap()
-                .map(|s| s.split(';'))
-                .flatten()
+                .flat_map(|s| s.split(';'))
                 .map(String::from)
                 .collect(),
             api_key: matches
@@ -146,6 +145,7 @@ where
                 .map(String::from)
                 .or(config.api_key),
             lucky,
+            ..config
         },
     })
 }
@@ -166,6 +166,7 @@ mod tests {
                 String::from("yeah"),
             ],
             search_engine: SearchEngine::DuckDuckGo,
+            copy_cmd: Some(String::from("wl-copy")),
         }
     }
 
