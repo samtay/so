@@ -6,6 +6,7 @@ on:
 
 jobs:
   homebrew:
+    if: false
     name: Bump Homebrew formula
     runs-on: ubuntu-latest
     steps:
