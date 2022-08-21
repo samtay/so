@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [v0.4.7](https://github.com/samtay/so/compare/v0.4.5...v0.4.7)
+
 #### Added
 - Keybinding: Press `y` to yank to system clipboard
 - New config field for specifying command to copy to system clipboard
