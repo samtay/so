@@ -1,3 +1,8 @@
+use std::collections::HashMap;
+use std::io;
+use std::io::Write;
+use std::sync::Arc;
+
 use cursive::event::{Event, Key};
 use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::traits::{Nameable, Scrollable};
@@ -6,23 +11,18 @@ use cursive::utils::span::SpannedString;
 use cursive::views::{Dialog, TextView, ViewRef};
 use cursive::Cursive;
 use cursive::XY;
-use std::collections::HashMap;
-use std::io;
-use std::io::Write;
-use std::sync::Arc;
 
 use super::markdown;
 use super::markdown::Markdown;
 use super::views::{
     LayoutView, ListView, MdView, Name, TempView, Vimable, NAME_ANSWER_LIST, NAME_ANSWER_VIEW,
-    NAME_FULL_LAYOUT, NAME_QUESTION_LIST, NAME_QUESTION_VIEW,
+    NAME_FULL_LAYOUT, NAME_QUESTION_LIST, NAME_QUESTION_VIEW, NAME_TEMP_MSG,
 };
 use crate::config::Config;
 use crate::error::Result;
 use crate::stackexchange::{Answer, Question};
 
 pub const NAME_HELP_VIEW: &str = "help_view";
-pub const NAME_TEMP_MSG: &str = "tmp_msg_view";
 
 // TODO an Arc<Mutex> app state that gets auto updated with new selections would
 // be convenient
@@ -225,7 +225,7 @@ pub fn temp_feedback_msg(siv: &mut Cursive, msg: io::Result<String>) {
     let content = msg.unwrap_or_else(|e| format!("error: {}", e));
     let styled_content = SpannedString::styled(content, style);
     let layer = Dialog::around(TextView::new(styled_content));
-    let temp = TempView::new(layer).with_name(NAME_TEMP_MSG);
+    let temp = TempView::new(layer, siv.cb_sink().clone());
     siv.add_layer(temp);
 }
 

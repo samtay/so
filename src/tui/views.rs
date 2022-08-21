@@ -1,3 +1,8 @@
+use std::fmt::Display;
+use std::rc::Rc;
+use std::time::Duration;
+use std::{fmt, thread};
+
 use cursive::event::{Callback, Event, EventResult, Key};
 use cursive::traits::{Finder, Nameable, Resizable, Scrollable};
 use cursive::utils::markup::StyledString;
@@ -6,10 +11,7 @@ use cursive::views::{
     HideableView, LinearLayout, NamedView, PaddedView, Panel, ResizedView, ScrollView, SelectView,
     TextView,
 };
-use cursive::{Cursive, Vec2, XY};
-use std::fmt;
-use std::fmt::Display;
-use std::rc::Rc;
+use cursive::{CbSink, Cursive, Vec2, XY};
 
 use super::markdown::Markdown;
 
@@ -18,6 +20,7 @@ pub const NAME_ANSWER_LIST: &str = "answer_list";
 pub const NAME_QUESTION_VIEW: &str = "question_view";
 pub const NAME_ANSWER_VIEW: &str = "answer_view";
 pub const NAME_FULL_LAYOUT: &str = "full_layout";
+pub const NAME_TEMP_MSG: &str = "tmp_msg_view";
 
 // TODO this seems pointless; probably should be removed
 pub enum Name {
@@ -647,19 +650,30 @@ pub struct TempView<T: View> {
     view: T,
 }
 
-// TODO figure out how to auto close this in 3-5s
 impl<T: View> ViewWrapper for TempView<T> {
     cursive::wrap_impl!(self.view: T);
 
     fn wrap_on_event(&mut self, _event: Event) -> EventResult {
+        // close this view on any input
         EventResult::with_cb(|s| {
             s.pop_layer();
         })
     }
 }
 
-impl<T: View> TempView<T> {
-    pub fn new(view: T) -> Self {
+impl<V: View> TempView<NamedView<V>> {
+    pub fn new(inner: V, cb_sink: CbSink) -> Self {
+        thread::spawn(move || {
+            thread::sleep(Duration::from_secs(2));
+            cb_sink
+                .send(Box::new(|s| {
+                    if let Some(pos) = s.screen_mut().find_layer_from_name(NAME_TEMP_MSG) {
+                        s.screen_mut().remove_layer(pos);
+                    }
+                }))
+                .expect("failed to send fn to cursive cb sink");
+        });
+        let view = inner.with_name(NAME_TEMP_MSG);
         Self { view }
     }
 }
