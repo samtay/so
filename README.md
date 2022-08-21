@@ -139,6 +139,20 @@ In the same directory you'll find `colors.toml` which is self-documented. The
 default theme attempts to blend in with your default terminal theme, but you can
 change it as necessary. In particular, you may want to change the `highlight_text` if the current selection is difficult to read. There are some themes in the [themes](./themes) directory as well.
 
+#### system clipboard integration
+There's a very primitive integration in place to copy the contents of
+the currently focused question or answer to the system clipboard. This requires
+some command in your PATH that can accept stdin and pipe to the clipboard.
+On mac & windows, this will work out of the box with the default set to `pbcopy`
+& `clip` respectively. On Linux, I've made the assumption that `xclip` is likely
+the most popular, but if you use something else (e.g. `wl-copy` on wayland),
+you'll need to set the command directly:
+```yaml
+# config.yml
+---
+copy_cmd: copy --option-to-take-stdin
+```
+
 #### api keys
 If you want to use your own [StackExchange API
 Key](https://api.stackexchange.com/docs) you can set it via
