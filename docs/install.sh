@@ -99,10 +99,14 @@ if [ -z ${dest-} ]; then
 fi
 
 if [ -z ${tag-} ]; then
-  tag=$(curl -s "$releases/latest" | cut -d'"' -f2 | rev | cut -d'/' -f1 | rev)
+  tag=$(
+    curl --silent "https://api.github.com/repos/samtay/so/releases/latest" |
+      grep '"tag_name":' |
+      sed -E 's/.*"([^"]+)".*/\1/'
+  )
 fi
 
-archive="$releases/download/$tag/$crate-$tag-$target.tar.gz"
+archive="$releases/download/$tag/$crate-$target.tar.gz"
 
 say_err "Repository:  $url"
 say_err "Crate:       $crate"

@@ -8,7 +8,7 @@ Set-Location $env:TEMP
 New-Item -Type Directory -Name $STAGE
 Set-Location $STAGE
 
-$ZIP = "$SRC_DIR\$($env:CRATE_NAME)-$($env:APPVEYOR_REPO_TAG_NAME)-$($env:TARGET).zip"
+$ZIP = "$SRC_DIR\$($env:CRATE_NAME)-$($env:TARGET).zip"
 
 Copy-Item "$SRC_DIR\target\$($env:TARGET)\release\$($env:CRATE_NAME).exe" '.\'
 
