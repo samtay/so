@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.8]
+
 #### Added
 - Keybinding: Press `o` to open the current answer in the default browser
 
@@ -76,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.5]
 - (Unofficial) initial passable release
 
-[Unreleased]: (https://github.com/samtay/so/compare/v0.4.6...HEAD)
+[Unreleased]: (https://github.com/samtay/so/compare/v0.4.8...HEAD)
+[0.4.8]: (https://github.com/samtay/so/compare/v0.4.7...v0.4.8)
 [0.4.7]: (https://github.com/samtay/so/compare/v0.4.6...v0.4.7)
 [0.4.6]: (https://github.com/samtay/so/compare/v0.4.5...v0.4.6)
 [0.4.5]: (https://github.com/samtay/so/compare/v0.4.3...v0.4.5)
