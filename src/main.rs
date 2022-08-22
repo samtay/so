@@ -13,17 +13,16 @@ use tokio::task;
 
 use config::Config;
 use error::{Error, Result};
-use stackexchange::{LocalStorage, Question, Search};
+use stackexchange::{LocalStorage, Search};
 use term::Term;
-use tui::markdown::Markdown;
 
 fn main() -> Result<()> {
     // Tokio runtime
     Runtime::new()?
         .block_on(run())
-        .map(|qs| {
+        .map(|app| {
             // Run TUI
-            qs.map(|(qs, cfg)| tui::run(qs, cfg));
+            app.map(tui::App::run);
         })
         .or_else(|e: Error| {
             // Handle errors
@@ -33,7 +32,7 @@ fn main() -> Result<()> {
 
 /// Runs the CLI and, if the user wishes to enter the TUI, returns
 /// question/answer data
-async fn run() -> Result<Option<(Vec<Question<Markdown>>, Config)>> {
+async fn run() -> Result<Option<tui::App>> {
     // Get CLI opts
     let opts = cli::get_opts()?;
     let config = opts.config;
@@ -88,18 +87,17 @@ async fn run() -> Result<Option<(Vec<Question<Markdown>>, Config)>> {
             term.print("\nPress **[SPACE]** to see more results, or any other key to exit");
 
             // Kick off the rest of the search in the background
-            let qs = task::spawn(async move { search.search_md().await });
+            let app = task::spawn(async move { tui::App::from_search(search).await });
             if !Term::wait_for_char(' ')? {
                 return Ok(None);
             }
 
             // Get the rest of the questions
-            return Ok(Some((Term::wrap_spinner(qs).await?.unwrap()?, config)));
+            return Ok(Some(Term::wrap_spinner(app).await?.unwrap()?));
         } else {
-            return Ok(Some((
-                Term::wrap_spinner(search.search_md()).await??,
-                config,
-            )));
+            return Ok(Some(
+                Term::wrap_spinner(tui::App::from_search(search)).await??,
+            ));
         }
     }
     Ok(None)

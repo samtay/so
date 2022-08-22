@@ -155,6 +155,10 @@ impl ListView {
         view.with_name(name)
     }
 
+    pub fn get_current_selection(&mut self) -> Option<u32> {
+        self.call_on_inner(|sv| sv.selection().as_deref().copied())
+    }
+
     pub fn reset_with_all<S, I>(&mut self, iter: I) -> Callback
     where
         S: Into<StyledString>,
@@ -397,6 +401,23 @@ impl LayoutView {
         self.view
             .call_on_name(name, |v: &mut MdView| v.get_content())
             .expect("call on md view failed")
+    }
+
+    // There may be no questions and there may be no answers? There should be answers but w/e
+    pub fn get_focused_ids(&mut self) -> Option<(u32, Option<u32>)> {
+        let curr_question = self
+            .view
+            .call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| {
+                v.get_current_selection()
+            })
+            .flatten()?;
+        let curr_answer = self
+            .view
+            .call_on_name(NAME_ANSWER_LIST, |v: &mut ListView| {
+                v.get_current_selection()
+            })
+            .flatten();
+        Some((curr_question, curr_answer))
     }
 
     fn get_constraints(&self, screen_size: Vec2) -> LayoutViewSizing {

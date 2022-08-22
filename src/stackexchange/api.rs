@@ -21,12 +21,14 @@ const SE_FILTER: &str = ".DND5X2VHHUH8HyJzpjo)5NvdHI3w6auG";
 /// Pagesize when fetching all SE sites. Should be good for many years...
 const SE_SITES_PAGESIZE: u16 = 10000;
 
+pub type Id = u32;
+
 /// Represents a StackExchange answer with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/answer)
 #[derive(Clone, Deserialize, Debug)]
 pub struct Answer<S> {
     #[serde(rename = "answer_id")]
-    pub id: u32,
+    pub id: Id,
     pub score: i32,
     #[serde(rename = "body_markdown")]
     pub body: S,
@@ -35,19 +37,21 @@ pub struct Answer<S> {
 
 /// Represents a StackExchange question with a custom selection of fields from
 /// the [StackExchange docs](https://api.stackexchange.com/docs/types/question)
-// TODO container over answers should be generic iterator
 #[derive(Clone, Deserialize, Debug)]
 pub struct Question<S> {
     #[serde(rename = "question_id")]
-    pub id: u32,
+    pub id: Id,
     pub score: i32,
-    #[serde(default = "Vec::new")]
     // N.B. empty vector default needed because questions endpoint cannot filter
     // answers >= 1
+    #[serde(default = "Vec::new")]
     pub answers: Vec<Answer<S>>,
     pub title: String,
     #[serde(rename = "body_markdown")]
     pub body: S,
+    // This is the only field that doesn't actually come back from SE; we add
+    // this site code to which the question belongs
+    pub site: Option<String>,
 }
 
 /// Internal struct that represents the boilerplate response wrapper from SE API.
@@ -98,7 +102,7 @@ impl Api {
             .into_iter()
             .filter(|q| !q.answers.is_empty())
             .collect();
-        Ok(Self::preprocess(qs))
+        Ok(Self::preprocess(site, qs))
     }
 
     /// Search against the SE site's /search/advanced endpoint with a given query.
@@ -126,7 +130,7 @@ impl Api {
             .json::<ResponseWrapper<Question<String>>>()
             .await?
             .items;
-        Ok(Self::preprocess(qs))
+        Ok(Self::preprocess(site, qs))
     }
 
     pub async fn sites(&self) -> Result<Vec<Site>> {
@@ -159,9 +163,10 @@ impl Api {
     }
 
     /// Sorts answers by score
+    /// Add the site code to which the question belongs
     /// Preprocess SE markdown to "cmark" markdown (or something closer to it)
     /// This markdown preprocess _always_ happens.
-    fn preprocess(qs: Vec<Question<String>>) -> Vec<Question<String>> {
+    fn preprocess(site: &str, qs: Vec<Question<String>>) -> Vec<Question<String>> {
         qs.into_par_iter()
             .map(|q| {
                 let mut answers = q.answers;
@@ -175,6 +180,7 @@ impl Api {
                     .collect();
                 Question {
                     answers,
+                    site: Some(site.to_string()),
                     body: markdown::preprocess(q.body),
                     ..q
                 }

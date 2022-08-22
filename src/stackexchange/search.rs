@@ -26,10 +26,10 @@ const USER_AGENT: &str =
 // TODO this really needs a better name...
 #[derive(Clone)]
 pub struct Search {
-    api: Api,
-    config: Config,
-    query: String,
-    sites: HashMap<String, String>,
+    pub api: Api,
+    pub config: Config,
+    pub query: String,
+    pub sites: HashMap<String, String>,
 }
 
 impl Search {
@@ -190,6 +190,7 @@ fn parse_markdown(qs: Vec<Question<String>>) -> Vec<Question<Markdown>> {
                 id: q.id,
                 score: q.score,
                 title: q.title,
+                site: q.site,
             }
         })
         .collect::<Vec<_>>()

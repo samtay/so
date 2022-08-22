@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+- Keybinding: Press `o` to open the current answer in the default browser
+
 ## [0.4.7]
 
 #### Added
