@@ -31,35 +31,31 @@ harness = false
 
 [dependencies]
 clap = "2.33"
-crossterm = { version = "0.20", features = ["event-stream"] }
+crossterm = { version = "0.23", features = ["event-stream"] }
 directories = "2.0"
 futures = "0.3"
 lazy_static = "1.4"
-minimad = "0.8"
+minimad = "0.9"
 percent-encoding = "2.1"
-pulldown-cmark = { version = "0.8", default-features = false }
+pulldown-cmark = { version = "0.9", default-features = false }
 rayon = "1.5"
 reqwest = { version = "0.11", features = ["gzip", "json"] }
 scraper = "0.12"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.8"
-# temporary to fix https://github.com/Lymia/enumset/issues/17
-syn = "=1.0.57"
-termimad = "0.13"
+serde_yaml = "0.9"
+termimad = "0.20"
 thiserror = "1.0"
-tokio = { version = "1.7", features = ["full"] }
+tokio = { version = "1.20", features = ["full"] }
 webbrowser = "0.7"
 
 [dependencies.cursive]
-version =  "0.17"
+version =  "0.18"
 default-features = false
 features = ["toml"]
 
 [features]
 default = ["cursive/termion-backend"]
-windows = ["cursive/crossterm-backend"]
-termion-backend = ["cursive/termion-backend"]
 ncurses-backend = ["cursive/ncurses-backend"]
 pancurses-backend = ["cursive/pancurses-backend"]
 crossterm-backend = ["cursive/crossterm-backend"]

@@ -10,7 +10,7 @@
 use cursive::theme::{Effect, PaletteColor, Style};
 use cursive::utils::markup::{StyledIndexedSpan, StyledString};
 use cursive::utils::span::{IndexedCow, IndexedSpan};
-use pulldown_cmark::{self, CowStr, Event, Options, Tag};
+use pulldown_cmark::{self, CowStr, Event, HeadingLevel, Options, Tag};
 
 pub type Markdown = StyledString;
 
@@ -79,16 +79,16 @@ fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
 }
 
 /// Iterator that parse a markdown text and outputs styled spans.
-pub struct Parser<'a> {
+pub struct Parser<'a, 'b> {
     first: bool,
     item: Option<u64>,
     in_list: bool,
     after_code_block: bool,
     stack: Vec<Style>,
-    parser: pulldown_cmark::Parser<'a>,
+    parser: pulldown_cmark::Parser<'a, 'b>,
 }
 
-impl<'a> Parser<'a> {
+impl<'a> Parser<'a, '_> {
     /// Creates a new parser with the given input text.
     pub fn new(input: &'a str) -> Self {
         let mut opts = pulldown_cmark::Options::empty();
@@ -127,7 +127,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-impl<'a> Iterator for Parser<'a> {
+impl<'a, 'b> Iterator for Parser<'a, 'b> {
     type Item = StyledIndexedSpan;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -141,10 +141,10 @@ impl<'a> Iterator for Parser<'a> {
                 // Add styles to the stack
                 Event::Start(tag) => match tag {
                     Tag::Emphasis => self.stack.push(Style::from(Effect::Italic)),
-                    Tag::Heading(level) if level == 1 => {
+                    Tag::Heading(HeadingLevel::H1, _, _) => {
                         self.stack.push(Style::from(PaletteColor::TitlePrimary))
                     }
-                    Tag::Heading(_) => self.stack.push(Style::from(PaletteColor::TitleSecondary)),
+                    Tag::Heading(..) => self.stack.push(Style::from(PaletteColor::TitleSecondary)),
                     // TODO style quote?
                     Tag::BlockQuote => return Some(self.literal("> ")),
                     Tag::Link(_, _, _) => return Some(self.literal("[")),
@@ -173,7 +173,7 @@ impl<'a> Iterator for Parser<'a> {
                 // Remove styles from stack
                 Event::End(tag) => match tag {
                     Tag::Paragraph => return Some(self.literal("\n\n")),
-                    Tag::Heading(_) => {
+                    Tag::Heading(..) => {
                         self.stack.pop().unwrap();
                         return Some(self.literal("\n\n"));
                     }

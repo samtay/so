@@ -153,7 +153,7 @@ impl Spinner {
         while let Err(TryRecvError::Empty) = rx.try_recv() {
             execute!(
                 stderr(),
-                cursor::MoveToColumn(0),
+                cursor::MoveToColumn(1),
                 terminal::Clear(ClearType::CurrentLine),
                 Print(dots.next().unwrap())
             )?;
