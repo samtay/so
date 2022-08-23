@@ -1,3 +1,4 @@
+use anyhow::Context;
 use crossterm::event::{read, Event, KeyCode, KeyEvent};
 use crossterm::style::{Color, Print};
 use crossterm::terminal::ClearType;
@@ -83,26 +84,31 @@ impl Term {
         Ok(())
     }
 
-    /// Blocks and waits for the user to press any key. Returns whether or not that key is the
+    /// Waits for the user to press any key. Returns whether or not that key is the
     /// character key `c`.
-    pub fn wait_for_char(c: char) -> Result<bool> {
-        let mut pressed = false;
-        terminal::enable_raw_mode()?;
-        loop {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char(ch),
-                    ..
-                }) if ch == c => {
-                    pressed = true;
-                    break;
+    pub async fn wait_for_char(c: char) -> Result<bool> {
+        let (tx, rx) = oneshot::channel();
+
+        tokio::task::spawn_blocking(move || {
+            let mut pressed = false;
+            terminal::enable_raw_mode().unwrap();
+            loop {
+                match read().unwrap() {
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char(ch),
+                        ..
+                    }) if ch == c => {
+                        pressed = true;
+                        break;
+                    }
+                    Event::Key(_) => break,
+                    _ => (),
                 }
-                Event::Key(_) => break,
-                _ => (),
             }
-        }
-        terminal::disable_raw_mode()?;
-        Ok(pressed)
+            terminal::disable_raw_mode().unwrap();
+            tx.send(pressed).unwrap();
+        });
+        Ok(rx.await.context("failed to get key event")?)
     }
 
     /// As it sounds, takes a future and shows a CLI spinner until it's output is ready

@@ -30,6 +30,7 @@ path = "benches/md_parsing.rs"
 harness = false
 
 [dependencies]
+anyhow = "1.0"
 clap = "2.33"
 crossterm = { version = "0.23", features = ["event-stream"] }
 directories = "2.0"

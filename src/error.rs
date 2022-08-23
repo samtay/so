@@ -2,8 +2,11 @@ use std::path::PathBuf;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
+// TODO convert/remove this to just use anyhow
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("{0}")]
+    Anyhow(#[from] anyhow::Error),
     #[error("Termimad error: {0}")]
     Termimad(#[from] termimad::Error),
     #[error("Crossterm error: {0}")]

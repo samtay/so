@@ -88,7 +88,7 @@ async fn run() -> Result<Option<tui::App>> {
 
             // Kick off the rest of the search in the background
             let app = task::spawn(async move { tui::App::from_search(search).await });
-            if !Term::wait_for_char(' ')? {
+            if !Term::wait_for_char(' ').await? {
                 return Ok(None);
             }
 
