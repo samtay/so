@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+#### Added
+- Allow `o` keybinding from the lucky prompt.
+
+#### Fixed
+- Hardcoded stackoverflow link
+
 ## [0.4.8]
 
 #### Added

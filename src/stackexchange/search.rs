@@ -2,7 +2,7 @@ use futures::stream::StreamExt;
 use rayon::prelude::*;
 use reqwest::header;
 use reqwest::Client;
-use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::config::{Config, SearchEngine};
 use crate::error::{Error, Result};
@@ -10,7 +10,7 @@ use crate::tui::markdown;
 use crate::tui::markdown::Markdown;
 
 use super::api::{Answer, Api, Question};
-use super::local_storage::LocalStorage;
+use super::local_storage::SiteMap;
 use super::scraper::{DuckDuckGo, Google, ScrapedData, Scraper};
 
 /// Limit on concurrent requests (gets passed to `buffer_unordered`)
@@ -24,23 +24,30 @@ const USER_AGENT: &str =
 /// This structure provides methods to search queries and get StackExchange
 /// questions/answers in return.
 // TODO this really needs a better name...
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Search {
     pub api: Api,
     pub config: Config,
     pub query: String,
-    pub sites: HashMap<String, String>,
+    pub site_map: Arc<SiteMap>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LuckyAnswer {
+    /// Preprocessed markdown content
+    pub answer: Answer<String>,
+    /// Parent question
+    pub question: Question<String>,
 }
 
 impl Search {
-    pub fn new(config: Config, local_storage: LocalStorage, query: String) -> Self {
+    pub fn new(config: Config, site_map: Arc<SiteMap>, query: String) -> Self {
         let api = Api::new(config.api_key.clone());
-        let sites = local_storage.get_urls(&config.sites);
         Search {
             api,
             config,
             query,
-            sites,
+            site_map,
         }
     }
 
@@ -51,7 +58,7 @@ impl Search {
     /// executing first, because there's less data to retrieve.
     ///
     /// Needs mut because it temporarily changes self.config
-    pub async fn search_lucky(&mut self) -> Result<String> {
+    pub async fn search_lucky(&mut self) -> Result<LuckyAnswer> {
         let original_config = self.config.clone();
         // Temp set lucky config
         self.config.limit = 1;
@@ -63,15 +70,13 @@ impl Search {
         // Reset config
         self.config = original_config;
 
-        Ok(result?
-            .into_iter()
-            .next()
-            .ok_or(Error::NoResults)?
-            .answers
-            .into_iter()
-            .next()
-            .ok_or_else(|| Error::StackExchange(String::from("Received question with no answers")))?
-            .body)
+        let question = result?.into_iter().next().ok_or(Error::NoResults)?;
+
+        let answer = question.answers.first().cloned().ok_or_else(|| {
+            Error::StackExchange(String::from("Received question with no answers"))
+        })?;
+
+        Ok(LuckyAnswer { answer, question })
     }
 
     /// Search and parse to Markdown for TUI
@@ -97,7 +102,7 @@ impl Search {
 
     /// Search query at duckduckgo and then fetch the resulting questions from SE.
     async fn search_by_scraper(&self, scraper: impl Scraper) -> Result<Vec<Question<String>>> {
-        let url = scraper.get_url(&self.query, self.sites.values());
+        let url = scraper.get_url(&self.query, self.site_map.values());
         let html = Client::new()
             .get(url)
             .header(header::USER_AGENT, USER_AGENT)
@@ -105,7 +110,7 @@ impl Search {
             .await?
             .text()
             .await?;
-        let data = scraper.parse(&html, &self.sites, self.config.limit)?;
+        let data = scraper.parse(&html, self.site_map.as_ref(), self.config.limit)?;
         self.parallel_questions(data).await
     }
 

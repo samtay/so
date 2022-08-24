@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use std::ops::Deref;
 use std::path::Path;
 
 use crate::config::Config;
@@ -7,6 +8,7 @@ use crate::error::{Error, Result};
 use crate::utils;
 
 use super::api::{Api, Site};
+use super::Question;
 
 /// This structure allows interacting with locally cached StackExchange metadata.
 pub struct LocalStorage {
@@ -62,8 +64,9 @@ impl LocalStorage {
         site_codes.iter().find(|s| !hm.contains_key(&s.as_str()))
     }
 
-    pub fn get_urls(&self, site_codes: &[String]) -> HashMap<String, String> {
-        self.sites
+    pub fn get_site_map(&self, site_codes: &[String]) -> SiteMap {
+        let inner = self
+            .sites
             .iter()
             .filter_map(move |site| {
                 let _ = site_codes
@@ -71,6 +74,54 @@ impl LocalStorage {
                     .find(|&sc| *sc == site.api_site_parameter)?;
                 Some((site.api_site_parameter.to_owned(), site.site_url.to_owned()))
             })
-            .collect()
+            .collect();
+        SiteMap { inner }
+    }
+}
+
+/// Just a map of site codes to site URLs, shareable across the app. These are
+/// only the sites relevant to the configuration / query, not all cached SE
+/// sites.
+#[derive(Debug)]
+pub struct SiteMap {
+    inner: HashMap<String, String>,
+}
+
+impl Deref for SiteMap {
+    type Target = HashMap<String, String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl SiteMap {
+    /// Get SE answer url. Panics if site was not set on the question, or
+    /// site code not found in the map.
+    pub fn answer_url<S>(&self, question: &Question<S>, answer_id: u32) -> String {
+        // answer link actually doesn't need question id
+        let site_url = self.site_url(question);
+        format!("https://{site_url}/a/{answer_id}")
+    }
+
+    /// Get SE question url. Panics if site was not set on the question, or
+    /// site code not found in the map.
+    pub fn question_url<S>(&self, question: &Question<S>) -> String {
+        // answer link actually doesn't need question id
+        let question_id = question.id;
+        let site_url = self.site_url(question);
+        format!("https://{site_url}/q/{question_id}")
+    }
+
+    fn site_url<S>(&self, question: &Question<S>) -> String {
+        self.inner
+            .get(
+                question
+                    .site
+                    .as_ref()
+                    .expect("bug: site not attached to question"),
+            )
+            .cloned()
+            .expect("bug: lost a site")
     }
 }

@@ -20,7 +20,7 @@ use super::views::{
 };
 use crate::config::Config;
 use crate::error::Result;
-use crate::stackexchange::{Answer, Id, Question, Search};
+use crate::stackexchange::{Answer, Id, Question, Search, SiteMap};
 
 pub const NAME_HELP_VIEW: &str = "help_view";
 
@@ -28,7 +28,7 @@ pub struct App {
     questions: HashMap<Id, Question<Markdown>>,
     answers: HashMap<Id, Answer<Markdown>>,
     config: Config,
-    sites: HashMap<String, String>,
+    site_map: Arc<SiteMap>,
 }
 
 impl App {
@@ -42,7 +42,7 @@ impl App {
             .collect();
         Ok(Self {
             config: search.config,
-            sites: search.sites,
+            site_map: search.site_map,
             questions,
             answers,
         })
@@ -143,10 +143,13 @@ impl App {
             let mut v: ViewRef<LayoutView> = s
                 .find_name(NAME_FULL_LAYOUT)
                 .expect("bug: layout view should exist");
-            if let Some((qid, aid)) = v.get_focused_ids() {
-                let res = webbrowser::open(&arc2.mk_url("stackoverflow".to_string(), qid, aid))
+            if let Some((qid, aid_opt)) = v.get_focused_ids() {
+                let question = arc2.questions.get(&qid).expect("bug: lost a question?!");
+                let url = aid_opt
+                    .map(|aid| arc2.site_map.answer_url(question, aid))
+                    .unwrap_or_else(|| arc2.site_map.question_url(question));
+                let res = webbrowser::open(&url)
                     .map(|_| "opened stackexchange in the browser!".to_string());
-                dbg!(&res);
                 temp_feedback_msg(s, res);
             }
         });
@@ -163,19 +166,6 @@ impl App {
         // Run the app
         siv.run();
         Ok(())
-    }
-
-    fn mk_url(&self, site: String, question_id: Id, answer_id_opt: Option<Id>) -> String {
-        // answer link actually doesn't need question id
-        let site_url = self
-            .sites
-            .get(&site)
-            .expect("we lost track of a site?!")
-            .to_string();
-        match answer_id_opt {
-            Some(answer_id) => format!("https://{site_url}/a/{answer_id}"),
-            None => format!("https://{site_url}/a/{question_id}"),
-        }
     }
 
     pub fn question_selected_callback(&self, s: &mut Cursive, qid: u32) {

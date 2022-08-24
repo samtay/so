@@ -6,8 +6,9 @@ mod term;
 mod tui;
 mod utils;
 
-use std::fmt::Write;
+use std::{fmt::Write, sync::Arc};
 
+use crossterm::event::{KeyCode, KeyEvent};
 use tokio::runtime::Runtime;
 use tokio::task;
 
@@ -79,17 +80,31 @@ async fn run() -> Result<Option<tui::App>> {
     }
 
     if let Some(q) = opts.query {
-        let mut search = Search::new(config.clone(), ls, q);
+        let site_map = Arc::new(ls.get_site_map(&config.sites));
+        let mut search = Search::new(config.clone(), Arc::clone(&site_map), q);
         if lucky {
             // Show top answer
-            let md = Term::wrap_spinner(search.search_lucky()).await??;
-            term.print(&md);
-            term.print("\nPress **[SPACE]** to see more results, or any other key to exit");
+            let lucky_answer = Term::wrap_spinner(search.search_lucky()).await??;
+            term.print(&lucky_answer.answer.body);
+            term.print("\nPress **[SPACE]** to see more results, **[o]** to open in the browser, or any other key to exit");
 
             // Kick off the rest of the search in the background
             let app = task::spawn(async move { tui::App::from_search(search).await });
-            if !Term::wait_for_char(' ').await? {
-                return Ok(None);
+
+            match Term::wait_for_key().await? {
+                KeyEvent {
+                    code: KeyCode::Char(' '),
+                    ..
+                } => (),
+                KeyEvent {
+                    code: KeyCode::Char('o'),
+                    ..
+                } => {
+                    let url = site_map.answer_url(&lucky_answer.question, lucky_answer.answer.id);
+                    webbrowser::open(&url)?;
+                    return Ok(None);
+                }
+                _ => return Ok(None),
             }
 
             // Get the rest of the questions

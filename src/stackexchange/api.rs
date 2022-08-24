@@ -66,7 +66,7 @@ pub struct Site {
     pub site_url: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Api {
     client: Client,
     api_key: Option<String>,
