@@ -8,7 +8,7 @@ use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::traits::{Nameable, Scrollable};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::SpannedString;
-use cursive::views::{Dialog, TextView, ViewRef};
+use cursive::views::{Dialog, LinearLayout, TextView, ViewRef};
 use cursive::Cursive;
 use cursive::XY;
 
@@ -77,16 +77,17 @@ impl App {
             s.call_on_name(NAME_ANSWER_VIEW, |v: &mut MdView| v.set_content(&a.body));
         });
 
-        siv.add_layer(
-            LayoutView::new(
-                1,
-                question_list_view,
-                question_view,
-                answer_list_view,
-                answer_view,
-            )
-            .add_vim_bindings(),
-        );
+        let main_layout = LayoutView::new(
+            1,
+            question_list_view,
+            question_view,
+            answer_list_view,
+            answer_view,
+        )
+        .add_vim_bindings();
+        let hint_text = TextView::new("? help \u{00B7} q quit");
+
+        siv.add_layer(LinearLayout::vertical().child(main_layout).child(hint_text));
 
         let cb = siv.call_on_name(NAME_QUESTION_LIST, |v: &mut ListView| v.select(0));
         if let Some(cb) = cb {
@@ -154,6 +155,7 @@ impl App {
             }
         });
 
+        // Close any open dialogs
         siv.add_global_callback(Event::Key(Key::Esc), |s| {
             if let Some(pos) = s.screen_mut().find_layer_from_name(NAME_HELP_VIEW) {
                 s.screen_mut().remove_layer(pos);
