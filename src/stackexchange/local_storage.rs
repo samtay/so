@@ -44,7 +44,7 @@ impl LocalStorage {
     pub async fn new(update: bool) -> Result<Self> {
         let project = Config::project_dir()?;
         let dir = project.cache_dir();
-        fs::create_dir_all(&dir)?;
+        fs::create_dir_all(dir)?;
         let sites_filename = dir.join("sites.json");
         let sites = Self::init_sites(&sites_filename, update).await?;
         Ok(LocalStorage { sites })

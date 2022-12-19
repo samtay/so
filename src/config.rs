@@ -74,7 +74,7 @@ impl Config {
     pub fn new() -> Result<Self> {
         let project = Self::project_dir()?;
         let dir = project.config_dir();
-        fs::create_dir_all(&dir)?;
+        fs::create_dir_all(dir)?;
         let filename = Self::config_file_path()?;
 
         match utils::open_file(&filename)? {
