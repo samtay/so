@@ -117,7 +117,7 @@ directories:
 - MacOS: `/Users/Alice/Library/Preferences/io.Sam-Tay.so`
 
 #### defaults
-The `config.yml` file let's you specify your CLI defaults. So if you dislike the
+The `config.yml` file lets you specify your CLI defaults. So if you dislike the
 lucky prompt, always search serverfault.com and unix.stackexchange.com, and
 want the [fastest search engine](#search-engines), you can set your config file like this:
 ```yaml
