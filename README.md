@@ -53,8 +53,8 @@ yay -S so-git
 You can install the package [so](https://cgit.freebsd.org/ports/tree/www/so) via
 ```
 pkg install so
-
 ```
+
 #### NetBSD
 You can install the package [so](https://pkgsrc.se/www/so) via
 ```
