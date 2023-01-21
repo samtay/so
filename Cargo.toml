@@ -48,7 +48,7 @@ serde_yaml = "0.9"
 termimad = "0.20"
 thiserror = "1.0"
 tokio = { version = "1.20", features = ["full"] }
-webbrowser = "0.7"
+webbrowser = "0.8"
 
 [dependencies.cursive]
 version =  "0.18"
