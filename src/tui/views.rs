@@ -143,7 +143,7 @@ impl ListView {
         }
         let view = view.with_name(&inner_name);
         let view = view.scrollable();
-        let view = Panel::new(view).title(format!("{}", name));
+        let view = Panel::new(view).title(format!("{name}"));
         let view = view.resized(SizeConstraint::Free, SizeConstraint::Free);
         let view = HideableView::new(view);
         let view = ListViewT {
