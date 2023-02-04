@@ -36,7 +36,7 @@ impl fmt::Display for SearchEngine {
             SearchEngine::Google => "google",
             SearchEngine::StackExchange => "stackexchange",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

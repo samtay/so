@@ -218,7 +218,7 @@ fn pretty_score(score: i32) -> StyledString {
         Color::Light(BaseColor::Red)
     };
     SpannedString::styled(
-        format!("({}) ", score),
+        format!("({score}) "),
         Style::merge(&[Style::from(color), Style::from(Effect::Bold)]),
     )
 }
@@ -262,7 +262,7 @@ pub fn temp_feedback_msg(siv: &mut Cursive, msg: io::Result<String>) {
     } else {
         Color::Light(BaseColor::Red)
     };
-    let content = msg.unwrap_or_else(|e| format!("error: {}", e));
+    let content = msg.unwrap_or_else(|e| format!("error: {e}"));
     let styled_content = SpannedString::styled(content, style);
     let layer = Dialog::around(TextView::new(styled_content));
     let temp = TempView::new(layer, siv.cb_sink().clone());

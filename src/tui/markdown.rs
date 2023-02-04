@@ -178,7 +178,7 @@ impl<'a, 'b> Iterator for Parser<'a, 'b> {
                         return Some(self.literal("\n\n"));
                     }
                     // TODO underline the link?
-                    Tag::Link(_, link, _) => return Some(self.literal(format!("]({})", link))),
+                    Tag::Link(_, link, _) => return Some(self.literal(format!("]({link})"))),
                     Tag::CodeBlock(_) => {
                         self.after_code_block = true;
                         self.stack.pop().unwrap();

@@ -67,7 +67,7 @@ async fn run() -> Result<Option<tui::App>> {
     }
 
     if let Some(site) = ls.find_invalid_site(sites).await {
-        term.print_error(&format!("{} is not a valid StackExchange site.\n\n", site))?;
+        term.print_error(&format!("{site} is not a valid StackExchange site.\n\n"))?;
         term.print_notice(
             "If you think this is incorrect, try running\n\
                 ```\n\
