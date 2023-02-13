@@ -67,6 +67,11 @@ You can install the homebrew [formula](https://formulae.brew.sh/formula/so)
 brew install so
 ```
 
+Alternatively, you can use [MacPorts](https://www.macports.org) to install [so](https://ports.macports.org/port/so/):
+```
+sudo port install so
+```
+
 #### Windows
 If you have [scoop](https://scoop.sh/) you can install via the extras bucket:
 ```shell
