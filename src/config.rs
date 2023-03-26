@@ -12,8 +12,10 @@ use crate::utils;
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum SearchEngine {
     DuckDuckGo,
+    #[default]
     Google,
     StackExchange,
 }
@@ -37,12 +39,6 @@ impl fmt::Display for SearchEngine {
             SearchEngine::StackExchange => "stackexchange",
         };
         write!(f, "{s}")
-    }
-}
-
-impl Default for SearchEngine {
-    fn default() -> Self {
-        SearchEngine::Google
     }
 }
 

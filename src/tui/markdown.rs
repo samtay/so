@@ -236,7 +236,7 @@ Attention
 ====
 I *really* love __Cursive__!";
         let parsed = parse(input);
-        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let spans: Vec<_> = parsed.spans().collect();
         let expected_spans = &[
             Span {
                 content: "Attention",
@@ -296,7 +296,7 @@ code fences
 ```
 Obviously.";
         let parsed = parse(input);
-        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let spans: Vec<_> = parsed.spans().collect();
         let expected_spans = &[
             Span {
                 content: "project",
@@ -403,7 +403,7 @@ and tasks
 - [x] done!
 ";
         let parsed = parse(input);
-        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let spans: Vec<_> = parsed.spans().collect();
         let expected_spans = &[
             Span {
                 content: "1. ",
@@ -486,7 +486,7 @@ and tasks
         let input = "
 I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 1.1 installed.\r\n\r\nAfter I hit <kbd>Esc</kbd> to exit insert mode I can't figure out how to save and quit. Hitting <kbd>Ctrl</kbd> + <kbd>C</kbd> shows me instructions that say typing \"quit<enter>\" will write and quit, but it doesn't seem to work.\r\n\r\n\r\n\r\n".to_string();
         let parsed = parse(preprocess(input));
-        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let spans: Vec<_> = parsed.spans().collect();
         let expected_spans = &[
             Span {
                 content: "I\'m on a Mac running OS",
@@ -617,7 +617,7 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
         let input =
             "1. Run the commands below, and compare the outputs\r\n\r\n\t\tsudo cat /etc/shadow";
         let parsed = parse(input);
-        let spans: Vec<_> = parsed.spans().into_iter().collect();
+        let spans: Vec<_> = parsed.spans().collect();
         let expected_spans = &[
             Span {
                 content: "1. ",
