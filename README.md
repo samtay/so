@@ -13,7 +13,7 @@
 [s3]: https://img.shields.io/badge/license-MIT-blue.svg
 [l3]: ./LICENSE
 
-<h5 align="center"> A terminal interface for StackOverflow written in Rust </h5>
+<h5 align="center"> A blazing fast terminal interface for StackOverflow written in Rust </h5>
 
 <h1 align="center">
 
