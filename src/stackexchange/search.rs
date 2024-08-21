@@ -16,11 +16,6 @@ use super::scraper::{DuckDuckGo, Google, ScrapedData, Scraper};
 /// Limit on concurrent requests (gets passed to `buffer_unordered`)
 const CONCURRENT_REQUESTS_LIMIT: usize = 8;
 
-/// Mock user agent to get real DuckDuckGo results
-// TODO copy other user agents and use random one each time
-const USER_AGENT: &str =
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0";
-
 /// This structure provides methods to search queries and get StackExchange
 /// questions/answers in return.
 // TODO this really needs a better name...
@@ -105,12 +100,13 @@ impl Search {
         let url = scraper.get_url(&self.query, self.site_map.values());
         let html = Client::new()
             .get(url)
-            .header(header::USER_AGENT, USER_AGENT)
+            .header(header::USER_AGENT, super::USER_AGENT)
             .send()
             .await?
             .text()
             .await?;
         let data = scraper.parse(&html, self.site_map.as_ref(), self.config.limit)?;
+        log::debug!("Scraped question IDs: {:#?}", &data.question_ids);
         self.parallel_questions(data).await
     }
 
@@ -124,10 +120,7 @@ impl Search {
         futures::stream::iter(question_ids)
             .map(|(site, ids)| {
                 let api = self.api.clone();
-                tokio::spawn(async move {
-                    let api = &api;
-                    api.questions(&site, ids).await
-                })
+                tokio::spawn(async move { api.questions(&site, ids).await })
             })
             .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
             .collect::<Vec<_>>()
@@ -149,10 +142,7 @@ impl Search {
                 let api = self.api.clone();
                 let limit = self.config.limit;
                 let query = self.query.clone();
-                tokio::spawn(async move {
-                    let api = &api;
-                    api.search_advanced(&query, &site, limit).await
-                })
+                tokio::spawn(async move { api.search_advanced(&query, &site, limit).await })
             })
             .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
             .collect::<Vec<_>>()
