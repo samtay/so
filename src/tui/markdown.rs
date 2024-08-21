@@ -245,7 +245,7 @@ I *really* love __Cursive__!";
             },
             Span {
                 content: "\n\n",
-                width: 0,
+                width: 2,
                 attr: &Style::none(),
             },
             Span {
@@ -305,7 +305,7 @@ Obviously.";
             },
             Span {
                 content: "\n\n",
-                width: 0,
+                width: 2,
                 attr: &Style::none(),
             },
             Span {
@@ -335,7 +335,7 @@ Obviously.";
             },
             Span {
                 content: "\n",
-                width: 0,
+                width: 1,
                 attr: &Style::none(),
             },
             Span {
@@ -345,17 +345,17 @@ Obviously.";
             },
             Span {
                 content: "\n\n",
-                width: 0,
+                width: 2,
                 attr: &Style::none(),
             },
             Span {
                 content: "indented code blocks\n",
-                width: 20,
+                width: 21,
                 attr: &Style::from(PaletteColor::Secondary),
             },
             Span {
                 content: "\n",
-                width: 0,
+                width: 1,
                 attr: &Style::none(),
             },
             Span {
@@ -365,17 +365,17 @@ Obviously.";
             },
             Span {
                 content: "\n\n",
-                width: 0,
+                width: 2,
                 attr: &Style::none(),
             },
             Span {
                 content: "code fences\n",
-                width: 11,
+                width: 12,
                 attr: &Style::from(PaletteColor::Secondary),
             },
             Span {
                 content: "\n",
-                width: 0,
+                width: 1,
                 attr: &Style::none(),
             },
             Span {
@@ -418,7 +418,7 @@ and tasks
             Span {
                 content: "\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 1,
             },
             Span {
                 content: "2. ",
@@ -433,7 +433,7 @@ and tasks
             Span {
                 content: "\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 1,
             },
             Span {
                 content: "or",
@@ -443,12 +443,12 @@ and tasks
             Span {
                 content: "\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 1,
             },
             Span {
                 content: "\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 1,
             },
             Span {
                 content: "• ",
@@ -463,7 +463,7 @@ and tasks
             Span {
                 content: "\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 1,
             },
             Span {
                 content: "• ",
@@ -526,7 +526,7 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
             Span {
                 content: "\n\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 2,
             },
             Span {
                 content: "After I hit ",
@@ -632,7 +632,7 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
             Span {
                 content: "\n\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 2,
             },
             Span {
                 content: " ",
@@ -647,7 +647,7 @@ I'm on a Mac running OS&nbsp;X&nbsp;v10.6 (Snow&nbsp;Leopard). I have Mercurial 
             Span {
                 content: "\n",
                 attr: &Style::none(),
-                width: 0,
+                width: 1,
             },
         ];
 

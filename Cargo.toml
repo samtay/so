@@ -31,8 +31,7 @@ harness = false
 
 [dependencies]
 anyhow = "1.0"
-clap = "2.33"
-# clap = { version = "4.5.16", features = ["cargo"] }
+clap = { version = "4.5.16", features = ["cargo", "string"] }
 crossterm = { version = "0.28.1", features = ["event-stream"] }
 directories = "5.0.1"
 env_logger = "0.11.5"
@@ -41,7 +40,7 @@ lazy_static = "1.4"
 log = "0.4.22"
 minimad = "0.13.1"
 percent-encoding = "2.1"
-pulldown-cmark = { version = "0.9", default-features = false }
+pulldown-cmark = { version = "0.9.6", default-features = false }
 rayon = "1.5"
 reqwest = { version = "0.12.7", features = ["gzip", "json"] }
 scraper = "0.20.0"
@@ -54,7 +53,7 @@ tokio = { version = "1.20", features = ["full"] }
 webbrowser = "1.0.1"
 
 [dependencies.cursive]
-version = "0.18"
+version = "0.21.1"
 default-features = false
 features = ["toml"]
 
