@@ -9,8 +9,7 @@ use crate::error::Result;
 use crate::tui::markdown;
 
 /// StackExchange API v2.2 URL
-// TODO why not https?
-const SE_API_URL: &str = "http://api.stackexchange.com";
+const SE_API_URL: &str = "https://api.stackexchange.com";
 const SE_API_VERSION: &str = "2.2";
 
 /// Filter generated to include only the fields needed to populate
@@ -80,6 +79,10 @@ impl Api {
             header::ACCEPT,
             header::HeaderValue::from_static("application/json"),
         );
+        headers.insert(
+            header::USER_AGENT,
+            header::HeaderValue::from_static(super::USER_AGENT),
+        );
         let client = Client::builder().default_headers(headers).build().unwrap();
         Api { client, api_key }
     }
@@ -91,15 +94,17 @@ impl Api {
         let endpoint = format!("questions/{ids}", ids = ids.join(";"));
         let url = stackexchange_url(&endpoint);
         log::debug!("Fetching questions from: {url}");
-        let qs = self
+        let qs_rsp = self
             .client
             .get(url)
             .query(&self.get_default_se_opts())
             .query(&[("site", site), ("pagesize", &total)])
             .send()
-            .await?
-            .json::<ResponseWrapper<Question<String>>>()
-            .await?
+            .await?;
+        let status_code = qs_rsp.status();
+        let body = qs_rsp.text().await?;
+        log::debug!("Stack exchange returned status {status_code} and body {body}");
+        let qs = serde_json::from_str::<ResponseWrapper<Question<String>>>(&body)?
             .items
             .into_iter()
             .filter(|q| !q.answers.is_empty())
