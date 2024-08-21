@@ -124,10 +124,7 @@ impl Search {
         futures::stream::iter(question_ids)
             .map(|(site, ids)| {
                 let api = self.api.clone();
-                tokio::spawn(async move {
-                    let api = &api;
-                    api.questions(&site, ids).await
-                })
+                tokio::spawn(async move { api.questions(&site, ids).await })
             })
             .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
             .collect::<Vec<_>>()
@@ -149,10 +146,7 @@ impl Search {
                 let api = self.api.clone();
                 let limit = self.config.limit;
                 let query = self.query.clone();
-                tokio::spawn(async move {
-                    let api = &api;
-                    api.search_advanced(&query, &site, limit).await
-                })
+                tokio::spawn(async move { api.search_advanced(&query, &site, limit).await })
             })
             .buffer_unordered(CONCURRENT_REQUESTS_LIMIT)
             .collect::<Vec<_>>()
