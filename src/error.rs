@@ -10,7 +10,7 @@ pub enum Error {
     #[error("Termimad error: {0}")]
     Termimad(#[from] termimad::Error),
     #[error("Crossterm error: {0}")]
-    Crossterm(#[from] crossterm::ErrorKind),
+    IO(#[from] std::io::Error),
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
     #[error("SerdeJson error: {0}")]
