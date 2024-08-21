@@ -89,9 +89,11 @@ impl Api {
     pub async fn questions(&self, site: &str, ids: Vec<String>) -> Result<Vec<Question<String>>> {
         let total = ids.len().to_string();
         let endpoint = format!("questions/{ids}", ids = ids.join(";"));
+        let url = stackexchange_url(&endpoint);
+        log::debug!("Fetching questions from: {url}");
         let qs = self
             .client
-            .get(stackexchange_url(&endpoint))
+            .get(url)
             .query(&self.get_default_se_opts())
             .query(&[("site", site), ("pagesize", &total)])
             .send()

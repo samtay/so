@@ -18,6 +18,7 @@ use stackexchange::{LocalStorage, Search};
 use term::Term;
 
 fn main() -> Result<()> {
+    env_logger::init();
     // Tokio runtime
     Runtime::new()?
         .block_on(run())

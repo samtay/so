@@ -34,8 +34,10 @@ anyhow = "1.0"
 clap = "2.33"
 crossterm = { version = "0.23", features = ["event-stream"] }
 directories = "2.0"
+env_logger = "0.11.5"
 futures = "0.3"
 lazy_static = "1.4"
+log = "0.4.22"
 minimad = "0.9"
 percent-encoding = "2.1"
 pulldown-cmark = { version = "0.9", default-features = false }
@@ -51,7 +53,7 @@ tokio = { version = "1.20", features = ["full"] }
 webbrowser = "0.8"
 
 [dependencies.cursive]
-version =  "0.18"
+version = "0.18"
 default-features = false
 features = ["toml"]
 

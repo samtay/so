@@ -111,6 +111,7 @@ impl Search {
             .text()
             .await?;
         let data = scraper.parse(&html, self.site_map.as_ref(), self.config.limit)?;
+        log::trace!("Scraped question IDs: {:#?}", &data.question_ids);
         self.parallel_questions(data).await
     }
 
