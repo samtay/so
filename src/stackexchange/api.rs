@@ -214,7 +214,7 @@ mod tests {
     fn test_stackexchange_url() {
         assert_eq!(
             stackexchange_url("some/endpoint").as_str(),
-            "http://api.stackexchange.com/2.2/some/endpoint"
+            "https://api.stackexchange.com/2.2/some/endpoint"
         )
     }
 }
