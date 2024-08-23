@@ -2,15 +2,23 @@ name: Release to homebrew core
 
 on:
   push:
-    tags: 'v*'
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
+        description: version to release to homebrew
 
 jobs:
   homebrew:
     name: Bump Homebrew formula
     runs-on: ubuntu-latest
     steps:
-      - uses: mislav/bump-homebrew-formula-action@v1
+      - uses: mislav/bump-homebrew-formula-action@v3.1
         with:
+          tag-name: ${{ github.event.inputs.tag || github.ref_name }}
           formula-name: so
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
