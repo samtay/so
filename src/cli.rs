@@ -1,4 +1,7 @@
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{
+    builder::{styling::AnsiColor as Ansi, Styles},
+    value_parser, Arg, ArgAction, ArgMatches, ColorChoice, Command,
+};
 
 use crate::config::Config;
 use crate::error::Result;
@@ -24,80 +27,83 @@ pub fn get_opts() -> Result<Opts> {
 fn get_opts_with<F, G>(mk_config: F, get_matches: G) -> Result<Opts>
 where
     F: FnOnce() -> Result<Config>,
-    G: for<'a> FnOnce(App<'a, '_>) -> ArgMatches<'a>,
+    G: for<'a> FnOnce(Command) -> ArgMatches,
 {
     let config = mk_config()?;
-    let limit = &config.limit.to_string();
-    let sites = &config.sites.join(";");
-    let engine = &config.search_engine.to_string();
-    let clapp = App::new("so")
-        .setting(AppSettings::ColoredHelp)
+    let limit = config.limit.to_string();
+    let sites = config.sites.join(";");
+    let engine = config.search_engine.to_string();
+    let clapp = Command::new("so")
+        .color(ColorChoice::Always)
+        .styles(STYLES)
         .version(clap::crate_version!())
         .author(clap::crate_authors!())
         .about(clap::crate_description!())
         .arg(
-            Arg::with_name("list-sites")
+            Arg::new("list-sites")
                 .long("list-sites")
+                .action(ArgAction::SetTrue)
                 .help("Print available StackExchange sites"),
         )
         .arg(
-            Arg::with_name("update-sites")
+            Arg::new("update-sites")
                 .long("update-sites")
+                .action(ArgAction::SetTrue)
                 .help("Update cache of StackExchange sites"),
         )
         .arg(
-            Arg::with_name("set-api-key")
+            Arg::new("set-api-key")
                 .long("set-api-key")
-                .number_of_values(1)
-                .takes_value(true)
+                .num_args(1)
                 .value_name("key")
                 .help("Set StackExchange API key"),
         )
         .arg(
-            Arg::with_name("print-config-path")
+            Arg::new("print-config-path")
                 .long("print-config-path")
                 .help("Print path to config file")
-                .hidden(true),
+                .action(ArgAction::SetTrue)
+                .hide(true),
         )
         .arg(
-            Arg::with_name("site")
+            Arg::new("site")
                 .long("site")
-                .short("s")
-                .multiple(true)
-                .number_of_values(1)
-                .takes_value(true)
-                .default_value(sites)
+                .short('s')
+                .action(ArgAction::Append)
+                .num_args(1)
+                .default_value(&sites)
                 .value_name("site-code")
                 .help("StackExchange site to search"),
         )
         .arg(
-            Arg::with_name("limit")
+            Arg::new("limit")
                 .long("limit")
-                .short("l")
-                .number_of_values(1)
-                .takes_value(true)
-                .default_value(limit)
+                .short('l')
+                .num_args(1)
+                .default_value(&limit)
                 .value_name("int")
-                .validator(|s| s.parse::<u32>().map(|_| ()).map_err(|e| e.to_string()))
+                .value_parser(value_parser!(u16))
                 .help("Question limit"),
         )
         .arg(
-            Arg::with_name("lucky")
+            Arg::new("lucky")
                 .long("lucky")
+                .action(ArgAction::SetTrue)
                 .help("Print the top-voted answer of the most relevant question"),
         )
         .arg(
-            Arg::with_name("no-lucky")
+            Arg::new("no-lucky")
                 .long("no-lucky")
+                .action(ArgAction::SetTrue)
                 .help("Disable lucky")
                 .conflicts_with("lucky")
-                .hidden(!config.lucky),
+                .hide(!config.lucky),
         )
         .arg(
-            Arg::with_name("query")
-                .multiple(true)
+            Arg::new("query")
+                .num_args(1..)
                 .index(1)
-                .required_unless_one(&[
+                .required_unless_present_any([
                     "list-sites",
                     "update-sites",
                     "set-api-key",
@@ -105,50 +111,54 @@ where
                 ]),
         )
         .arg(
-            Arg::with_name("search-engine")
+            Arg::new("search-engine")
                 .long("search-engine")
-                .short("e")
-                .number_of_values(1)
-                .takes_value(true)
-                .default_value(engine)
+                .short('e')
+                .num_args(1)
+                .default_value(&engine)
                 .value_name("engine")
-                .possible_values(&["duckduckgo", "google", "stackexchange"])
+                .value_parser(["duckduckgo", "google", "stackexchange"])
                 .help("Use specified search engine")
                 .next_line_help(true),
         );
     let matches = get_matches(clapp);
-    let lucky = match (matches.is_present("lucky"), matches.is_present("no-lucky")) {
+    let lucky = match (matches.get_flag("lucky"), matches.get_flag("no-lucky")) {
         (true, _) => true,
         (_, true) => false,
         _ => config.lucky,
     };
     Ok(Opts {
-        list_sites: matches.is_present("list-sites"),
-        print_config_path: matches.is_present("print-config-path"),
-        update_sites: matches.is_present("update-sites"),
-        set_api_key: matches.value_of("set-api-key").map(String::from),
+        list_sites: matches.get_flag("list-sites"),
+        print_config_path: matches.get_flag("print-config-path"),
+        update_sites: matches.get_flag("update-sites"),
+        set_api_key: matches.get_one("set-api-key").cloned(),
         query: matches
-            .values_of("query")
-            .map(|q| q.collect::<Vec<_>>().join(" ")),
+            .get_many::<String>("query")
+            .map(|words| words.map(|s| s.as_str()).collect::<Vec<_>>().join(" ")),
         config: Config {
             // these unwraps are safe via clap default values & validators
-            limit: matches.value_of("limit").unwrap().parse::<u16>().unwrap(),
-            search_engine: serde_yaml::from_str(matches.value_of("search-engine").unwrap())?,
+            limit: *matches.get_one("limit").unwrap(),
+            search_engine: serde_yaml::from_str(
+                matches.get_one::<String>("search-engine").unwrap(),
+            )?,
             sites: matches
-                .values_of("site")
-                .unwrap()
+                .get_many::<String>("site")
+                .expect("at least one site is required!")
                 .flat_map(|s| s.split(';'))
                 .map(String::from)
                 .collect(),
-            api_key: matches
-                .value_of("set-api-key")
-                .map(String::from)
-                .or(config.api_key),
+            api_key: matches.get_one("set-api-key").cloned().or(config.api_key),
             lucky,
             ..config
         },
     })
 }
+
+const STYLES: Styles = Styles::styled()
+    .header(Ansi::Red.on_default().bold())
+    .usage(Ansi::Red.on_default().bold())
+    .literal(Ansi::Blue.on_default().bold())
+    .placeholder(Ansi::Green.on_default());
 
 #[cfg(test)]
 mod tests {
@@ -235,7 +245,7 @@ mod tests {
     #[should_panic]
     fn test_conflicts() {
         get_opts_with(mk_config, |a| {
-            a.get_matches_from_safe(vec!["so", "--lucky", "--no-lucky"])
+            a.try_get_matches_from(vec!["so", "--lucky", "--no-lucky"])
                 .unwrap()
         })
         .unwrap();

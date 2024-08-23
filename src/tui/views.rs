@@ -1,7 +1,10 @@
-use std::fmt::Display;
 use std::rc::Rc;
 use std::time::Duration;
 use std::{fmt, thread};
+use std::{
+    fmt::Display,
+    marker::{Send, Sync},
+};
 
 use cursive::event::{Callback, Event, EventResult, Key};
 use cursive::traits::{Finder, Nameable, Resizable, Scrollable};
@@ -116,7 +119,7 @@ impl<T: View> ViewWrapper for ListViewT<T> {
 impl ListView {
     pub fn new<F>(name: Name, on_select: F) -> NamedView<Self>
     where
-        F: Fn(&mut Cursive, &u32) + 'static,
+        F: Fn(&mut Cursive, &u32) + 'static + Sync + Send,
     {
         ListView::make_new::<StyledString, Vec<_>, _>(name, None, on_select)
     }
@@ -125,7 +128,7 @@ impl ListView {
     where
         S: Into<StyledString>,
         I: IntoIterator<Item = (S, u32)>,
-        F: Fn(&mut Cursive, &u32) + 'static,
+        F: Fn(&mut Cursive, &u32) + 'static + Sync + Send,
     {
         ListView::make_new(name, Some(items), on_select)
     }
@@ -134,7 +137,7 @@ impl ListView {
     where
         S: Into<StyledString>,
         I: IntoIterator<Item = (S, u32)>,
-        F: Fn(&mut Cursive, &u32) + 'static,
+        F: Fn(&mut Cursive, &u32) + 'static + Sync + Send,
     {
         let inner_name = name.to_string() + "_inner";
         let mut view = SelectView::new().on_select(on_select);
