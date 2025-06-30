@@ -223,7 +223,7 @@ fn pretty_score(score: i32) -> StyledString {
     )
 }
 
-// This would be a good usecase for brining in termimad tables
+// This would be a good usecase for bringing in termimad tables
 pub fn help() -> Dialog {
     let bindings = r###"
 ## Panes

@@ -14,7 +14,7 @@ use std::time::Duration;
 ///     Some(re.captures(input)?.name("id")?.as_str().to_owned())
 /// }
 /// ```
-/// **greatly** degrades peformance (maybe due to the fact that the regex depends on configuration
+/// **greatly** degrades performance (maybe due to the fact that the regex depends on configuration
 /// and can't be compiled with lazy_static?).
 ///
 /// Still, I could try creating a regex that captures the url encoded SE url and question id and
