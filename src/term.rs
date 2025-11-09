@@ -1,10 +1,11 @@
 use anyhow::Context;
 use crossterm::event::{read, Event, KeyEvent};
-use crossterm::style::{Color, Print};
+use crossterm::style::Print;
 use crossterm::terminal::ClearType;
 use crossterm::{cursor, execute, terminal};
 use futures::Future;
 use std::io::stderr;
+use termimad::crossterm::style::Color;
 use termimad::{CompoundStyle, LineStyle, MadSkin};
 use tokio::sync::{
     oneshot,
