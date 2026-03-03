@@ -10,7 +10,7 @@
 use cursive::theme::{Effect, PaletteColor, Style};
 use cursive::utils::markup::{StyledIndexedSpan, StyledString};
 use cursive::utils::span::{IndexedCow, IndexedSpan};
-use pulldown_cmark::{self, CowStr, Event, HeadingLevel, Options, Tag};
+use pulldown_cmark::{self, CowStr, Event, HeadingLevel, Options, Tag, TagEnd};
 
 pub type Markdown = StyledString;
 
@@ -79,16 +79,16 @@ fn parse_spans(input: &str) -> Vec<StyledIndexedSpan> {
 }
 
 /// Iterator that parse a markdown text and outputs styled spans.
-pub struct Parser<'a, 'b> {
+pub struct Parser<'a> {
     first: bool,
     item: Option<u64>,
     in_list: bool,
     after_code_block: bool,
     stack: Vec<Style>,
-    parser: pulldown_cmark::Parser<'a, 'b>,
+    parser: pulldown_cmark::Parser<'a>,
 }
 
-impl<'a> Parser<'a, '_> {
+impl<'a> Parser<'a> {
     /// Creates a new parser with the given input text.
     pub fn new(input: &'a str) -> Self {
         let mut opts = pulldown_cmark::Options::empty();
@@ -127,7 +127,7 @@ impl<'a> Parser<'a, '_> {
     }
 }
 
-impl<'a, 'b> Iterator for Parser<'a, 'b> {
+impl<'a> Iterator for Parser<'a> {
     type Item = StyledIndexedSpan;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -141,13 +141,13 @@ impl<'a, 'b> Iterator for Parser<'a, 'b> {
                 // Add styles to the stack
                 Event::Start(tag) => match tag {
                     Tag::Emphasis => self.stack.push(Style::from(Effect::Italic)),
-                    Tag::Heading(HeadingLevel::H1, _, _) => {
+                    Tag::Heading { level: HeadingLevel::H1, .. } => {
                         self.stack.push(Style::from(PaletteColor::TitlePrimary))
                     }
-                    Tag::Heading(..) => self.stack.push(Style::from(PaletteColor::TitleSecondary)),
+                    Tag::Heading { .. } => self.stack.push(Style::from(PaletteColor::TitleSecondary)),
                     // TODO style quote?
-                    Tag::BlockQuote => return Some(self.literal("> ")),
-                    Tag::Link(_, _, _) => return Some(self.literal("[")),
+                    Tag::BlockQuote(_) => return Some(self.literal("> ")),
+                    Tag::Link { .. } => return Some(self.literal("[")),
                     Tag::CodeBlock(_) => {
                         self.stack.push(Style::from(PaletteColor::Secondary));
                     }
@@ -172,28 +172,28 @@ impl<'a, 'b> Iterator for Parser<'a, 'b> {
                 },
                 // Remove styles from stack
                 Event::End(tag) => match tag {
-                    Tag::Paragraph => return Some(self.literal("\n\n")),
-                    Tag::Heading(..) => {
+                    TagEnd::Paragraph => return Some(self.literal("\n\n")),
+                    TagEnd::Heading(_) => {
                         self.stack.pop().unwrap();
                         return Some(self.literal("\n\n"));
                     }
                     // TODO underline the link?
-                    Tag::Link(_, link, _) => return Some(self.literal(format!("]({link})"))),
-                    Tag::CodeBlock(_) => {
+                    TagEnd::Link => return Some(self.literal("](link)")),
+                    TagEnd::CodeBlock => {
                         self.after_code_block = true;
                         self.stack.pop().unwrap();
                         return Some(self.literal("\n"));
                     }
-                    Tag::Emphasis | Tag::Strong => {
+                    TagEnd::Emphasis | TagEnd::Strong => {
                         self.stack.pop().unwrap();
                     }
-                    Tag::List(_) => {
+                    TagEnd::List(_) => {
                         self.item = None;
                         self.in_list = false;
                         self.first = false;
                         return Some(self.literal("\n"));
                     }
-                    Tag::Item => {
+                    TagEnd::Item => {
                         self.item = self.item.map(|ix| ix + 1);
                         return Some(self.literal("\n"));
                     }
@@ -209,7 +209,10 @@ impl<'a, 'b> Iterator for Parser<'a, 'b> {
                     );
                 }
                 // Treat all other texts the same
-                Event::FootnoteReference(text) | Event::Html(text) | Event::Text(text) => {
+                Event::FootnoteReference(text) | Event::Html(text) | Event::Text(text) | Event::InlineHtml(text) => {
+                    return Some(self.cowstr_to_span(text, None));
+                }
+                Event::InlineMath(text) | Event::DisplayMath(text) => {
                     return Some(self.cowstr_to_span(text, None));
                 }
                 Event::TaskListMarker(checked) => {
