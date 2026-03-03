@@ -40,7 +40,7 @@ lazy_static = "1.4"
 log = "0.4.22"
 minimad = "0.13.1"
 percent-encoding = "2.1"
-pulldown-cmark = { version = "0.9.6", default-features = false }
+pulldown-cmark = { version = "0.13", default-features = false }
 rayon = "1.5"
 reqwest = { version = "0.12.7", features = ["gzip", "json"] }
 scraper = "0.20.0"
