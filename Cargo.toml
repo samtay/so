@@ -32,7 +32,7 @@ harness = false
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5.16", features = ["cargo", "string"] }
-crossterm = { version = "0.28.1", features = ["event-stream"] }
+crossterm = { version = "0.29.0", features = ["event-stream"] }
 directories = "5.0.1"
 env_logger = "0.11.5"
 futures = "0.3"
