@@ -15,8 +15,9 @@ use crate::utils;
 #[derive(Default)]
 pub enum SearchEngine {
     DuckDuckGo,
-    #[default]
     Google,
+    #[default]
+    Startpage,
     StackExchange,
 }
 
@@ -36,6 +37,7 @@ impl fmt::Display for SearchEngine {
         let s = match &self {
             SearchEngine::DuckDuckGo => "duckduckgo",
             SearchEngine::Google => "google",
+            SearchEngine::Startpage => "startpage",
             SearchEngine::StackExchange => "stackexchange",
         };
         write!(f, "{s}")

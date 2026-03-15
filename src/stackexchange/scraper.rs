@@ -10,6 +10,7 @@ use crate::error::{Error, Result};
 /// DuckDuckGo URL
 const DUCKDUCKGO_URL: &str = "https://duckduckgo.com";
 const GOOGLE_URL: &str = "https://google.com/search";
+const STARTPAGE_URL: &str = "https://www.startpage.com/do/search";
 
 // Is question_id unique across all sites? If not, then this edge case is
 // unaccounted for when sorting.
@@ -89,14 +90,38 @@ impl Scraper for Google {
         parse_with_selector(anchors, html, sites, limit)
     }
 
-    /// Creates duckduckgo search url given sites and query
-    /// See https://duckduckgo.com/params for more info
+    /// Creates google search url given sites and query
     fn get_url<'a, I>(&self, query: &str, sites: I) -> Url
     where
         I: IntoIterator<Item = &'a String>,
     {
         let q = make_query_arg(query, sites);
         Url::parse_with_params(GOOGLE_URL, &[("q", q.as_str())]).unwrap()
+    }
+}
+
+pub struct Startpage;
+
+impl Scraper for Startpage {
+    /// Parse SE data out of Startpage search results html.
+    /// Startpage proxies Google results and serves them as static HTML.
+    fn parse(
+        &self,
+        html: &str,
+        sites: &HashMap<String, String>,
+        limit: u16,
+    ) -> Result<ScrapedData> {
+        let anchors = Selector::parse("a.result-title").unwrap();
+        parse_with_selector(anchors, html, sites, limit)
+    }
+
+    /// Creates Startpage search url given sites and query
+    fn get_url<'a, I>(&self, query: &str, sites: I) -> Url
+    where
+        I: IntoIterator<Item = &'a String>,
+    {
+        let q = make_query_arg(query, sites);
+        Url::parse_with_params(STARTPAGE_URL, &[("q", q.as_str())]).unwrap()
     }
 }
 
@@ -328,6 +353,36 @@ mod tests {
             Err(Error::Scraping(s)) if s == *"DuckDuckGo blocked this request" => Ok(()),
             _ => Err(String::from("Failed to detect DuckDuckGo blocker")),
         }
+    }
+
+    #[test]
+    fn test_startpage_url() {
+        let q = "how do I exit vim?";
+        let sites = vec![
+            String::from("stackoverflow.com"),
+            String::from("unix.stackexchange.com"),
+        ];
+        assert_eq!(
+            Startpage.get_url(q, &sites).as_str(),
+            String::from(
+                "https://www.startpage.com/do/search\
+                ?q=%28site%3Astackoverflow.com+OR+site%3Aunix.stackexchange.com%29\
+                +how+do+I+exit+vim"
+            )
+        )
+    }
+
+    #[test]
+    fn test_startpage_parser() {
+        let html = include_str!("../../test/startpage/exit-vim.html");
+        let mut sites = HashMap::new();
+        sites.insert(
+            String::from("stackoverflow"),
+            String::from("stackoverflow.com"),
+        );
+        let data = Startpage.parse(html, &sites, 3).unwrap();
+        assert_eq!(data.question_ids["stackoverflow"].len(), 3);
+        assert_eq!(data.question_ids["stackoverflow"][0], "11828270");
     }
 
     #[test]

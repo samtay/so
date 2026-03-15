@@ -34,8 +34,8 @@ $ so how do i reverse a list in python
 # search for a latex solution
 $ so --site tex how to put tilde over character
 
-# use google to search stackoverflow.com, askubuntu.com, and unix.stackexchange.com
-$ so -e google -s askubuntu -s stackoverflow -s unix how do i install linux
+# search stackoverflow.com, askubuntu.com, and unix.stackexchange.com via startpage
+$ so -e startpage -s askubuntu -s stackoverflow -s unix how do i install linux
 ```
 
 ## installation
@@ -169,15 +169,17 @@ StackExchange API with no key up to 300 times per day per IP, which I imagine is
 fine for most users.
 
 ### search engines
-The available search engines are StackExchange, DuckDuckGo, and Google.
+The available search engines are StackExchange, Startpage, DuckDuckGo, and Google.
 StackExchange will always be the fastest to search because it doesn't require an
 additional request or any HTML parsing; however, it is also very primitive.
-~~DuckDuckGo is in second place for speed, as its response HTML is much smaller
-than Google's. I've found that it performs well for my queries, so it is the
-default search engine.~~
 
-DuckDuckGo [sometimes blocks requests](https://github.com/samtay/so/issues/16), so
-it is no longer the default.
+**Startpage** is the default search engine. It proxies Google search results and
+serves them as static HTML, providing high quality results without requiring
+JavaScript.
+
+Google and DuckDuckGo now require JavaScript execution for search results, making
+them unreliable from a terminal client. They are still available via `-e google`
+or `-e duckduckgo` but may not return results.
 
 ### multi-site searching
 As stated in the [docs](https://api.stackexchange.com/docs/throttle),

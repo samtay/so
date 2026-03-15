@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use so::stackexchange::scraper::{DuckDuckGo, Google, Scraper};
+use so::stackexchange::scraper::{DuckDuckGo, Google, Scraper, Startpage};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -44,6 +44,12 @@ fn bench_html_parsers(c: &mut Criterion) {
         BenchmarkId::new("DuckDuckGo.parse", "exit-vim"),
         include_str!("../test/duckduckgo/exit-vim.html"),
         |b, html| b.iter(|| DuckDuckGo.parse(html, &sites, limit)),
+    );
+
+    group.bench_with_input(
+        BenchmarkId::new("Startpage.parse", "exit-vim"),
+        include_str!("../test/startpage/exit-vim.html"),
+        |b, html| b.iter(|| Startpage.parse(html, &sites, limit)),
     );
 
     let mut sites = HashMap::new();

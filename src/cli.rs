@@ -117,7 +117,7 @@ where
                 .num_args(1)
                 .default_value(&engine)
                 .value_name("engine")
-                .value_parser(["duckduckgo", "google", "stackexchange"])
+                .value_parser(["duckduckgo", "google", "startpage", "stackexchange"])
                 .help("Use specified search engine")
                 .next_line_help(true),
         );

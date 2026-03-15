@@ -1,7 +1,5 @@
 use futures::stream::StreamExt;
 use rayon::prelude::*;
-use reqwest::header;
-use reqwest::Client;
 use std::sync::Arc;
 
 use crate::config::{Config, SearchEngine};
@@ -11,7 +9,7 @@ use crate::tui::markdown::Markdown;
 
 use super::api::{Answer, Api, Question};
 use super::local_storage::SiteMap;
-use super::scraper::{DuckDuckGo, Google, ScrapedData, Scraper};
+use super::scraper::{DuckDuckGo, Google, ScrapedData, Scraper, Startpage};
 
 /// Limit on concurrent requests (gets passed to `buffer_unordered`)
 const CONCURRENT_REQUESTS_LIMIT: usize = 8;
@@ -84,6 +82,7 @@ impl Search {
         match self.config.search_engine {
             SearchEngine::DuckDuckGo => self.search_by_scraper(DuckDuckGo).await,
             SearchEngine::Google => self.search_by_scraper(Google).await,
+            SearchEngine::Startpage => self.search_by_scraper(Startpage).await,
             SearchEngine::StackExchange => self.parallel_search_advanced().await,
         }
         .and_then(|qs| {
@@ -98,9 +97,8 @@ impl Search {
     /// Search query at duckduckgo and then fetch the resulting questions from SE.
     async fn search_by_scraper(&self, scraper: impl Scraper) -> Result<Vec<Question<String>>> {
         let url = scraper.get_url(&self.query, self.site_map.values());
-        let html = Client::new()
+        let html = super::scraper_client()
             .get(url)
-            .header(header::USER_AGENT, super::USER_AGENT)
             .send()
             .await?
             .text()
