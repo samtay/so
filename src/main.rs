@@ -40,6 +40,7 @@ async fn run() -> Result<Option<tui::App>> {
     let config = opts.config;
     let sites = &config.sites;
     let lucky = config.lucky;
+    let print = opts.print;
 
     // Term tools and markdown styles (outside of TUI)
     let mut term = Term::new();
@@ -80,7 +81,13 @@ async fn run() -> Result<Option<tui::App>> {
     if let Some(q) = opts.query {
         let site_map = Arc::new(ls.get_site_map(&config.sites));
         let mut search = Search::new(config.clone(), Arc::clone(&site_map), q);
-        if lucky {
+        if print {
+            // Print mode: output answer to stdout and exit immediately.
+            // No spinner, no keypress wait, no TUI — fully pipeable.
+            let lucky_answer = search.search_lucky().await?;
+            term.print(&lucky_answer.answer.body);
+            return Ok(None);
+        } else if lucky {
             // Show top answer
             let lucky_answer = Term::wrap_spinner(search.search_lucky()).await??;
             term.print(&lucky_answer.answer.body);

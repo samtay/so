@@ -14,6 +14,7 @@ pub struct Opts {
     pub update_sites: bool,
     pub set_api_key: Option<String>,
     pub query: Option<String>,
+    pub print: bool,
     pub config: Config,
 }
 
@@ -100,6 +101,13 @@ where
                 .hide(!config.lucky),
         )
         .arg(
+            Arg::new("print")
+                .long("print")
+                .short('p')
+                .action(ArgAction::SetTrue)
+                .help("Print answer to stdout and exit (no TUI, no interactive prompt)"),
+        )
+        .arg(
             Arg::new("query")
                 .num_args(1..)
                 .index(1)
@@ -127,11 +135,15 @@ where
         (_, true) => false,
         _ => config.lucky,
     };
+    let print = matches.get_flag("print");
+    // --print implies lucky mode (print top answer and exit)
+    let lucky = if print { true } else { lucky };
     Ok(Opts {
         list_sites: matches.get_flag("list-sites"),
         print_config_path: matches.get_flag("print-config-path"),
         update_sites: matches.get_flag("update-sites"),
         set_api_key: matches.get_one("set-api-key").cloned(),
+        print,
         query: matches
             .get_many::<String>("query")
             .map(|words| words.map(|s| s.as_str()).collect::<Vec<_>>().join(" ")),
